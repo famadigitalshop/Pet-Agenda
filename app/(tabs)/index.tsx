@@ -1,12 +1,14 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card, CategoryTag, Eyebrow, Muted, ScreenTitle, StatusChip, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
 import { healthEvents, pets } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
+import { daysRemaining, useReminders } from '@/contexts/RemindersContext';
 
 export default function DashboardScreen() {
   const c = useColors();
+  const { reminders, cancelReminder } = useReminders();
 
   const pendingReminders = pets.filter((p) => p.vaccinationStatus === 'atencao');
 
@@ -25,6 +27,35 @@ export default function DashboardScreen() {
             {pendingReminders[0].name}: {pendingReminders[0].vaccinationLabel.toLowerCase()}
           </Text>
         </Card>
+      )}
+
+      {reminders.length > 0 && (
+        <View style={{ marginTop: 16, gap: 10 }}>
+          <Text style={{ fontFamily: Fonts.mono, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: c.textFaint }}>
+            Alarmes ativos
+          </Text>
+          {reminders.map((reminder) => {
+            const left = daysRemaining(reminder);
+            return (
+              <Card key={reminder.id} style={styles.reminderCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: c.text, fontWeight: '700', fontSize: 15 }}>
+                    ⏰ {reminder.medicineName}
+                  </Text>
+                  <Muted style={{ marginTop: 2 }}>
+                    {reminder.petName} · {reminder.times.join(', ')}
+                  </Muted>
+                  <Muted style={{ marginTop: 2, fontSize: 12.5 }}>
+                    {left > 0 ? `${left} dia${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'Última dose hoje'}
+                  </Muted>
+                </View>
+                <Pressable onPress={() => cancelReminder(reminder.id)} style={styles.cancelBtn}>
+                  <Text style={{ color: c.textFaint, fontSize: 18 }}>×</Text>
+                </Pressable>
+              </Card>
+            );
+          })}
+        </View>
       )}
 
       <View style={{ gap: 12, marginTop: 16 }}>
@@ -104,5 +135,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
+  },
+  reminderCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  cancelBtn: {
+    padding: 4,
   },
 });
