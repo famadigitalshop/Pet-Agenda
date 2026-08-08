@@ -41,6 +41,7 @@ export type HealthEventCategory = 'Vacina' | 'Receita' | 'Exame' | 'Cirurgia';
 
 export type Medicine = {
   name: string;
+  dosage: string; // ex.: "1 comprimido", "5 ml", "3 gotas em cada ouvido"
   times: string[]; // "HH:mm", ordenados
   durationDays: number;
 };
@@ -54,6 +55,7 @@ export type HealthEvent = {
   title: string;
   vet: string;
   medicines?: Medicine[]; // uma receita pode ter mais de um remédio
+  photoUri?: string; // foto da receita/documento escaneado
 };
 
 export const healthEvents: HealthEvent[] = [
@@ -65,7 +67,9 @@ export const healthEvents: HealthEvent[] = [
     symptom: 'Otite',
     title: 'Otomax — 3x ao dia por 7 dias',
     vet: 'Dra. Carolina Reis',
-    medicines: [{ name: 'Otomax', times: ['08:00', '14:00', '20:00'], durationDays: 7 }],
+    medicines: [
+      { name: 'Otomax', dosage: '3 gotas em cada ouvido', times: ['08:00', '14:00', '20:00'], durationDays: 7 },
+    ],
   },
   {
     id: '2',
@@ -84,8 +88,8 @@ export const healthEvents: HealthEvent[] = [
     title: 'Apoquel 16mg, Otomax',
     vet: 'Dra. Carolina Reis',
     medicines: [
-      { name: 'Apoquel 16mg', times: ['08:00'], durationDays: 14 },
-      { name: 'Otomax', times: ['08:00', '20:00'], durationDays: 7 },
+      { name: 'Apoquel 16mg', dosage: '1 comprimido', times: ['08:00'], durationDays: 14 },
+      { name: 'Otomax', dosage: '3 gotas em cada ouvido', times: ['08:00', '20:00'], durationDays: 7 },
     ],
   },
   {
@@ -105,7 +109,7 @@ export const healthEvents: HealthEvent[] = [
     symptom: 'Otite',
     title: 'Otosynalar — 2x ao dia por 10 dias',
     vet: 'Dr. Marcelo Souza',
-    medicines: [{ name: 'Otosynalar', times: ['08:00', '20:00'], durationDays: 10 }],
+    medicines: [{ name: 'Otosynalar', dosage: '3 gotas em cada ouvido', times: ['08:00', '20:00'], durationDays: 10 }],
   },
   {
     id: '6',

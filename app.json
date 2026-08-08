@@ -39,6 +39,12 @@
         {
           "color": "#a63a2e"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "O PetCare Wallet usa a câmera para fotografar receitas e carteirinhas de vacinação."
+        }
       ]
     ],
     "experiments": {

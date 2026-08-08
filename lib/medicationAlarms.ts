@@ -9,6 +9,7 @@ const MAX_SCHEDULED_NOTIFICATIONS = 60;
 export type ScheduleInput = {
   petName: string;
   medicineName: string;
+  dosage: string;
   times: string[]; // "HH:mm"
   startDate: string; // "YYYY-MM-DD"
   durationDays: number;
@@ -45,7 +46,7 @@ export async function ensureNotificationSetup() {
   }
 }
 
-function buildOccurrences({ times, startDate, durationDays }: Omit<ScheduleInput, 'petName' | 'medicineName'>) {
+function buildOccurrences({ times, startDate, durationDays }: Omit<ScheduleInput, 'petName' | 'medicineName' | 'dosage'>) {
   const sortedTimes = [...times].sort();
   const occurrences: { date: Date; isLast: boolean }[] = [];
 
@@ -68,7 +69,7 @@ function buildOccurrences({ times, startDate, durationDays }: Omit<ScheduleInput
 }
 
 export async function scheduleMedicationNotifications(input: ScheduleInput): Promise<ScheduleResult> {
-  const { petName, medicineName, times, startDate, durationDays } = input;
+  const { petName, medicineName, dosage, times, startDate, durationDays } = input;
   const occurrences = buildOccurrences({ times, startDate, durationDays });
 
   if (Platform.OS === 'web') {
@@ -102,8 +103,8 @@ export async function scheduleMedicationNotifications(input: ScheduleInput): Pro
       content: {
         title: occurrence.isLast ? `Última dose — ${medicineName}` : `Hora do remédio de ${petName}`,
         body: occurrence.isLast
-          ? `${petName} toma agora a última dose de ${medicineName}. Tratamento concluído! 🎉`
-          : `Dar ${medicineName} para ${petName} agora.`,
+          ? `${petName} toma agora a última dose de ${medicineName} (${dosage}). Tratamento concluído! 🎉`
+          : `Dar ${dosage} de ${medicineName} para ${petName} agora.`,
         sound: true,
       },
       trigger: {

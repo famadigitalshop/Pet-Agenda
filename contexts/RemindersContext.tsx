@@ -12,6 +12,7 @@ export type MedicationReminder = {
   petId: string;
   petName: string;
   medicineName: string;
+  dosage: string;
   times: string[]; // "HH:mm", ordenados
   startDate: string; // "YYYY-MM-DD"
   durationDays: number;
@@ -25,6 +26,7 @@ type AddReminderInput = {
   petId: string;
   petName: string;
   medicineName: string;
+  dosage: string;
   times: string[];
   durationDays: number;
 };
@@ -76,6 +78,7 @@ export function RemindersProvider({ children }: { children: React.ReactNode }) {
         const result = await scheduleMedicationNotifications({
           petName: input.petName,
           medicineName: input.medicineName,
+          dosage: input.dosage,
           times: input.times,
           startDate,
           durationDays: input.durationDays,
@@ -90,6 +93,7 @@ export function RemindersProvider({ children }: { children: React.ReactNode }) {
           petId: input.petId,
           petName: input.petName,
           medicineName: input.medicineName.trim(),
+          dosage: input.dosage.trim(),
           times: [...input.times].sort(),
           startDate,
           durationDays: input.durationDays,

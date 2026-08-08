@@ -44,6 +44,7 @@ export default function DashboardScreen() {
                   <Text style={{ color: c.text, fontWeight: '700', fontSize: 15 }}>
                     ⏰ {reminder.medicineName}
                   </Text>
+                  <Muted style={{ marginTop: 2 }}>{reminder.dosage}</Muted>
                   <Muted style={{ marginTop: 2 }}>
                     {reminder.petName} · {reminder.times.join(', ')}
                   </Muted>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
@@ -12,12 +13,28 @@ const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 type MedicineForm = {
   name: string;
+  dosage: string;
   times: string[];
   durationDays: string;
 };
 
 function emptyMedicine(): MedicineForm {
-  return { name: '', times: ['08:00'], durationDays: '7' };
+  return { name: '', dosage: '', times: ['08:00'], durationDays: '7' };
+}
+
+async function capturePhoto(): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.6 });
+    return !result.canceled && result.assets?.[0]?.uri ? result.assets[0].uri : null;
+  }
+
+  const permission = await ImagePicker.requestCameraPermissionsAsync();
+  if (permission.status !== 'granted') {
+    Alert.alert('Permissão da câmera negada', 'Para fotografar a receita, permita o acesso à câmera do PetCare Wallet nas configurações do aparelho.');
+    return null;
+  }
+  const result = await ImagePicker.launchCameraAsync({ quality: 0.6 });
+  return !result.canceled && result.assets?.[0]?.uri ? result.assets[0].uri : null;
 }
 
 export default function AdicionarScreen() {
@@ -31,13 +48,23 @@ export default function AdicionarScreen() {
   const [procedureTitle, setProcedureTitle] = useState('');
   const [medicines, setMedicines] = useState<MedicineForm[]>([emptyMedicine()]);
   const [alarmOn, setAlarmOn] = useState(true);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const pet = pets.find((p) => p.id === petId)!;
   const isReceita = category === 'Receita';
 
+  async function handleScanPress() {
+    const uri = await capturePhoto();
+    if (uri) setPhotoUri(uri);
+  }
+
   function updateMedicineName(index: number, value: string) {
     setMedicines((prev) => prev.map((m, i) => (i === index ? { ...m, name: value } : m)));
+  }
+
+  function updateMedicineDosage(index: number, value: string) {
+    setMedicines((prev) => prev.map((m, i) => (i === index ? { ...m, dosage: value } : m)));
   }
 
   function updateMedicineDuration(index: number, value: string) {
@@ -72,6 +99,7 @@ export default function AdicionarScreen() {
     setSymptom('');
     setProcedureTitle('');
     setMedicines([emptyMedicine()]);
+    setPhotoUri(null);
   }
 
   async function handleSave() {
@@ -90,6 +118,7 @@ export default function AdicionarScreen() {
         symptom: symptom.trim() || undefined,
         title: procedureTitle.trim(),
         vet: 'Você',
+        photoUri: photoUri ?? undefined,
       });
       Alert.alert('Registro salvo', 'Documento adicionado à linha do tempo.');
       resetForm();
@@ -104,6 +133,10 @@ export default function AdicionarScreen() {
 
     const parsed: Medicine[] = [];
     for (const med of filled) {
+      if (!med.dosage.trim()) {
+        Alert.alert('Falta a dosagem', `Informe a dosagem de ${med.name} (ex.: 1 comprimido, 5 ml).`);
+        return;
+      }
       const validTimes = med.times.map((t) => t.trim()).filter((t) => TIME_PATTERN.test(t));
       if (validTimes.length === 0) {
         Alert.alert('Horário inválido', `Informe pelo menos um horário válido (HH:mm) para ${med.name}.`);
@@ -114,7 +147,7 @@ export default function AdicionarScreen() {
         Alert.alert('Duração inválida', `Informe por quantos dias tomar ${med.name}.`);
         return;
       }
-      parsed.push({ name: med.name.trim(), times: [...validTimes].sort(), durationDays: days });
+      parsed.push({ name: med.name.trim(), dosage: med.dosage.trim(), times: [...validTimes].sort(), durationDays: days });
     }
 
     setSaving(true);
@@ -127,6 +160,7 @@ export default function AdicionarScreen() {
           petId: pet.id,
           petName: pet.name,
           medicineName: med.name,
+          dosage: med.dosage,
           times: med.times,
           durationDays: med.durationDays,
         });
@@ -157,6 +191,7 @@ export default function AdicionarScreen() {
       title: parsed.map((m) => m.name).join(', '),
       vet: 'Você',
       medicines: parsed,
+      photoUri: photoUri ?? undefined,
     });
 
     const medicineNames = parsed.map((m) => m.name).join(', ');
@@ -178,12 +213,23 @@ export default function AdicionarScreen() {
         Fotografe a receita ou carteirinha. Se ela tiver mais de um remédio, adicione cada um abaixo — é o que garante que a busca funcione mesmo com letra difícil.
       </Muted>
 
-      <Pressable style={[styles.scanBox, { borderColor: c.accent, backgroundColor: c.card }]}>
-        <View style={[styles.scanIcon, { borderColor: c.accent }]}>
-          <Text style={{ color: c.accent, fontSize: 22 }}>+</Text>
-        </View>
-        <Text style={{ color: c.accent, fontWeight: '600', marginTop: 10 }}>Toque para escanear</Text>
-        <Muted style={{ marginTop: 2 }}>Câmera com corte automático de borda</Muted>
+      <Pressable
+        onPress={handleScanPress}
+        style={[styles.scanBox, { borderColor: c.accent, backgroundColor: c.card }, photoUri && styles.scanBoxWithPhoto]}>
+        {photoUri ? (
+          <>
+            <Image source={{ uri: photoUri }} style={styles.photoPreview} resizeMode="cover" />
+            <Text style={{ color: c.accent, fontWeight: '600', marginTop: 10 }}>Toque para trocar a foto</Text>
+          </>
+        ) : (
+          <>
+            <View style={[styles.scanIcon, { borderColor: c.accent }]}>
+              <Text style={{ color: c.accent, fontSize: 22 }}>+</Text>
+            </View>
+            <Text style={{ color: c.accent, fontWeight: '600', marginTop: 10 }}>Toque para escanear</Text>
+            <Muted style={{ marginTop: 2 }}>Câmera com corte automático de borda</Muted>
+          </>
+        )}
       </Pressable>
 
       <View style={styles.form}>
@@ -238,6 +284,14 @@ export default function AdicionarScreen() {
                     value={med.name}
                     onChangeText={(v) => updateMedicineName(medIndex, v)}
                     placeholder="ex.: Otomax, Apoquel 16mg"
+                    style={{ marginBottom: 10 }}
+                  />
+
+                  <Text style={styles.miniLabel}>Dosagem</Text>
+                  <Input
+                    value={med.dosage}
+                    onChangeText={(v) => updateMedicineDosage(medIndex, v)}
+                    placeholder="ex.: 1 comprimido, 5 ml, 3 gotas em cada ouvido"
                     style={{ marginBottom: 10 }}
                   />
 
@@ -349,6 +403,15 @@ const styles = StyleSheet.create({
     paddingVertical: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  scanBoxWithPhoto: {
+    paddingVertical: 14,
+  },
+  photoPreview: {
+    width: '100%',
+    height: 160,
+    borderRadius: 10,
   },
   scanIcon: {
     width: 44,

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Image, StyleSheet, TextInput, View } from 'react-native';
 
 import { Card, CategoryTag, Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
@@ -92,20 +92,24 @@ export default function HistoricoScreen() {
 function EventCard({ event }: { event: HealthEvent }) {
   const c = useColors();
   const pet = pets.find((p) => p.id === event.petId);
-  const hasMultipleMedicines = (event.medicines?.length ?? 0) > 1;
+  const hasMedicines = (event.medicines?.length ?? 0) > 0;
 
   return (
     <Card style={{ marginBottom: 10 }}>
       <View style={styles.eventTop}>
         <CategoryTag category={event.category} />
-        <Muted style={{ fontFamily: Fonts.mono, fontSize: 12 }}>{formatDate(event.date)}</Muted>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Muted style={{ fontFamily: Fonts.mono, fontSize: 12 }}>{formatDate(event.date)}</Muted>
+          {event.photoUri && <Image source={{ uri: event.photoUri }} style={styles.thumb} />}
+        </View>
       </View>
 
-      {hasMultipleMedicines ? (
+      {hasMedicines ? (
         <View style={{ marginTop: 8, gap: 6 }}>
           {event.medicines!.map((med, i) => (
             <View key={i} style={i > 0 ? [styles.medicineRow, { borderTopColor: c.border }] : undefined}>
               <Text style={{ color: c.text, fontSize: 15, fontWeight: '600' }}>{med.name}</Text>
+              <Muted style={{ fontSize: 12.5 }}>{med.dosage}</Muted>
               <Muted style={{ fontSize: 12.5 }}>
                 {med.times.join(', ')} · {med.durationDays} dia{med.durationDays > 1 ? 's' : ''}
               </Muted>
@@ -162,5 +166,10 @@ const styles = StyleSheet.create({
   medicineRow: {
     paddingTop: 6,
     borderTopWidth: 1,
+  },
+  thumb: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
   },
 });
