@@ -3,96 +3,171 @@ import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react
 
 import { Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
-import { healthCategories, pets } from '@/constants/mockData';
+import { HealthEventCategory, Medicine, healthCategories, pets } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
 import { useReminders } from '@/contexts/RemindersContext';
+import { useEvents } from '@/contexts/EventsContext';
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+type MedicineForm = {
+  name: string;
+  times: string[];
+  durationDays: string;
+};
+
+function emptyMedicine(): MedicineForm {
+  return { name: '', times: ['08:00'], durationDays: '7' };
+}
 
 export default function AdicionarScreen() {
   const c = useColors();
   const { addReminder } = useReminders();
+  const { addEvent } = useEvents();
 
   const [petId, setPetId] = useState(pets[0].id);
   const [category, setCategory] = useState<string | null>('Receita');
   const [symptom, setSymptom] = useState('');
-  const [medicine, setMedicine] = useState('');
-  const [times, setTimes] = useState<string[]>(['08:00']);
-  const [durationDays, setDurationDays] = useState('7');
+  const [procedureTitle, setProcedureTitle] = useState('');
+  const [medicines, setMedicines] = useState<MedicineForm[]>([emptyMedicine()]);
   const [alarmOn, setAlarmOn] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const pet = pets.find((p) => p.id === petId)!;
-  const showAlarmFields = category === 'Receita';
+  const isReceita = category === 'Receita';
 
-  function updateTime(index: number, value: string) {
-    setTimes((prev) => prev.map((t, i) => (i === index ? value : t)));
+  function updateMedicineName(index: number, value: string) {
+    setMedicines((prev) => prev.map((m, i) => (i === index ? { ...m, name: value } : m)));
   }
 
-  function addTimeField() {
-    if (times.length >= 4) return;
-    setTimes((prev) => [...prev, '']);
+  function updateMedicineDuration(index: number, value: string) {
+    setMedicines((prev) => prev.map((m, i) => (i === index ? { ...m, durationDays: value } : m)));
   }
 
-  function removeTimeField(index: number) {
-    setTimes((prev) => prev.filter((_, i) => i !== index));
+  function updateMedicineTime(medIndex: number, timeIndex: number, value: string) {
+    setMedicines((prev) =>
+      prev.map((m, i) => (i === medIndex ? { ...m, times: m.times.map((t, ti) => (ti === timeIndex ? value : t)) } : m))
+    );
+  }
+
+  function addMedicineTime(medIndex: number) {
+    setMedicines((prev) => prev.map((m, i) => (i === medIndex && m.times.length < 4 ? { ...m, times: [...m.times, ''] } : m)));
+  }
+
+  function removeMedicineTime(medIndex: number, timeIndex: number) {
+    setMedicines((prev) =>
+      prev.map((m, i) => (i === medIndex ? { ...m, times: m.times.filter((_, ti) => ti !== timeIndex) } : m))
+    );
+  }
+
+  function addMedicineBlock() {
+    setMedicines((prev) => [...prev, emptyMedicine()]);
+  }
+
+  function removeMedicineBlock(index: number) {
+    setMedicines((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function resetForm() {
+    setSymptom('');
+    setProcedureTitle('');
+    setMedicines([emptyMedicine()]);
   }
 
   async function handleSave() {
-    if (!showAlarmFields || !alarmOn) {
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (!isReceita) {
+      if (!procedureTitle.trim()) {
+        Alert.alert('Falta a informação', 'Preencha o campo Remédio / procedimento.');
+        return;
+      }
+      addEvent({
+        id: `${Date.now()}`,
+        petId: pet.id,
+        date: today,
+        category: category as HealthEventCategory,
+        symptom: symptom.trim() || undefined,
+        title: procedureTitle.trim(),
+        vet: 'Você',
+      });
       Alert.alert('Registro salvo', 'Documento adicionado à linha do tempo.');
+      resetForm();
       return;
     }
 
-    if (!medicine.trim()) {
-      Alert.alert('Falta o nome do remédio', 'Preencha o campo Remédio antes de ativar o alarme.');
+    const filled = medicines.filter((m) => m.name.trim());
+    if (filled.length === 0) {
+      Alert.alert('Falta o remédio', 'Adicione pelo menos um remédio à receita.');
       return;
     }
-    const validTimes = times.map((t) => t.trim()).filter((t) => TIME_PATTERN.test(t));
-    if (validTimes.length === 0) {
-      Alert.alert('Horário inválido', 'Informe pelo menos um horário no formato HH:mm, ex.: 08:00.');
-      return;
-    }
-    const days = parseInt(durationDays, 10);
-    if (!days || days < 1) {
-      Alert.alert('Duração inválida', 'Informe por quantos dias o tratamento vai durar.');
-      return;
+
+    const parsed: Medicine[] = [];
+    for (const med of filled) {
+      const validTimes = med.times.map((t) => t.trim()).filter((t) => TIME_PATTERN.test(t));
+      if (validTimes.length === 0) {
+        Alert.alert('Horário inválido', `Informe pelo menos um horário válido (HH:mm) para ${med.name}.`);
+        return;
+      }
+      const days = parseInt(med.durationDays, 10);
+      if (!days || days < 1) {
+        Alert.alert('Duração inválida', `Informe por quantos dias tomar ${med.name}.`);
+        return;
+      }
+      parsed.push({ name: med.name.trim(), times: [...validTimes].sort(), durationDays: days });
     }
 
     setSaving(true);
-    const result = await addReminder({
-      petId: pet.id,
-      petName: pet.name,
-      medicineName: medicine.trim(),
-      times: validTimes,
-      durationDays: days,
-    });
+    let truncatedAny = false;
+    let totalDoses = 0;
+
+    if (alarmOn) {
+      for (const med of parsed) {
+        const result = await addReminder({
+          petId: pet.id,
+          petName: pet.name,
+          medicineName: med.name,
+          times: med.times,
+          durationDays: med.durationDays,
+        });
+        if (!result.ok) {
+          setSaving(false);
+          if (result.reason === 'permission-denied') {
+            Alert.alert(
+              'Permissão de notificação negada',
+              'Para receber os alarmes, permita notificações para o PetCare Wallet nas configurações do aparelho.'
+            );
+          } else {
+            Alert.alert('Revise os dados', `Confira os horários e a duração de ${med.name}.`);
+          }
+          return;
+        }
+        truncatedAny = truncatedAny || result.truncated;
+        totalDoses += med.times.length * med.durationDays;
+      }
+    }
     setSaving(false);
 
-    if (!result.ok) {
-      if (result.reason === 'permission-denied') {
-        Alert.alert(
-          'Permissão de notificação negada',
-          'Para receber os alarmes, permita notificações para o PetCare Wallet nas configurações do aparelho.'
-        );
-      } else {
-        Alert.alert('Revise os dados', 'Confira o remédio, os horários e a duração informados.');
-      }
-      return;
-    }
+    addEvent({
+      id: `${Date.now()}`,
+      petId: pet.id,
+      date: today,
+      category: 'Receita',
+      symptom: symptom.trim() || undefined,
+      title: parsed.map((m) => m.name).join(', '),
+      vet: 'Você',
+      medicines: parsed,
+    });
 
-    const totalDoses = validTimes.length * days;
+    const medicineNames = parsed.map((m) => m.name).join(', ');
     Alert.alert(
-      'Alarme ativado',
-      `${totalDoses} doses de ${medicine.trim()} agendadas para ${pet.name}, ${validTimes.join(
-        ', '
-      )}, por ${days} dia${days > 1 ? 's' : ''}. Você será avisado na última dose.` +
-        (result.truncated ? '\n\nTratamento longo: apenas as próximas notificações foram agendadas por enquanto.' : '')
+      alarmOn ? 'Alarmes ativados' : 'Receita salva',
+      alarmOn
+        ? `${parsed.length} remédio${parsed.length > 1 ? 's' : ''} agendado${parsed.length > 1 ? 's' : ''} para ${pet.name} (${totalDoses} doses no total). Você será avisado na última dose de cada um.` +
+            (truncatedAny ? '\n\nTratamento longo: apenas as próximas notificações foram agendadas por enquanto.' : '')
+        : `${medicineNames} adicionado(s) à carteira de ${pet.name}.`
     );
-    setMedicine('');
-    setSymptom('');
-    setTimes(['08:00']);
-    setDurationDays('7');
+    resetForm();
   }
 
   return (
@@ -100,7 +175,7 @@ export default function AdicionarScreen() {
       <Eyebrow>Novo registro</Eyebrow>
       <ScreenTitle style={{ marginBottom: 4 }}>Escanear documento</ScreenTitle>
       <Muted style={{ marginBottom: 18 }}>
-        Fotografe a receita ou carteirinha. Depois confirme os dados abaixo — é o que garante que a busca funcione mesmo com letra difícil.
+        Fotografe a receita ou carteirinha. Se ela tiver mais de um remédio, adicione cada um abaixo — é o que garante que a busca funcione mesmo com letra difícil.
       </Muted>
 
       <Pressable style={[styles.scanBox, { borderColor: c.accent, backgroundColor: c.card }]}>
@@ -132,69 +207,98 @@ export default function AdicionarScreen() {
           <Input value={symptom} onChangeText={setSymptom} placeholder="ex.: otite, alergia de pele, vômito" />
         </Field>
 
-        <Field label="Remédio / procedimento">
-          <Input value={medicine} onChangeText={setMedicine} placeholder="ex.: Otomax, V10, hemograma" />
-        </Field>
+        {!isReceita && (
+          <Field label="Remédio / procedimento">
+            <Input value={procedureTitle} onChangeText={setProcedureTitle} placeholder="ex.: V10, hemograma, castração" />
+          </Field>
+        )}
 
         <Field label="Data">
           <Input value="08/08/2026" onChangeText={() => {}} placeholder="dd/mm/aaaa" />
         </Field>
 
-        {showAlarmFields && (
-          <View style={[styles.alarmSection, { borderColor: c.border, backgroundColor: c.card }]}>
-            <Pressable style={styles.alarmHeader} onPress={() => setAlarmOn((v) => !v)}>
-              <View>
-                <Text style={{ color: c.text, fontWeight: '700', fontSize: 15 }}>⏰ Alarme de horário</Text>
-                <Muted style={{ fontSize: 12.5, marginTop: 2 }}>Avisa em cada dose e na última do tratamento</Muted>
-              </View>
-              <View style={[styles.toggle, { backgroundColor: alarmOn ? c.accent : c.cardSunken, borderColor: c.border }]}>
-                <View style={[styles.toggleDot, { backgroundColor: '#fff', alignSelf: alarmOn ? 'flex-end' : 'flex-start' }]} />
-              </View>
-            </Pressable>
+        {isReceita && (
+          <View style={{ marginBottom: 16 }}>
+            <Text style={styles.sectionLabel}>Remédios desta receita</Text>
+            <View style={{ gap: 12 }}>
+              {medicines.map((med, medIndex) => (
+                <View key={medIndex} style={[styles.medicineBlock, { borderColor: c.border, backgroundColor: c.card }]}>
+                  <View style={styles.medicineHeader}>
+                    <Text style={{ fontFamily: Fonts.mono, fontSize: 11, letterSpacing: 0.5, color: c.textFaint, textTransform: 'uppercase' }}>
+                      Remédio {medIndex + 1}
+                    </Text>
+                    {medicines.length > 1 && (
+                      <Pressable onPress={() => removeMedicineBlock(medIndex)}>
+                        <Text style={{ color: c.textFaint, fontSize: 13, fontWeight: '600' }}>Remover</Text>
+                      </Pressable>
+                    )}
+                  </View>
 
-            {alarmOn && (
-              <View style={{ marginTop: 14, gap: 12 }}>
-                <View>
-                  <Text style={styles.miniLabel}>Horários (toque + para adicionar)</Text>
-                  <View style={{ gap: 8 }}>
-                    {times.map((time, i) => (
-                      <View key={i} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                  <Input
+                    value={med.name}
+                    onChangeText={(v) => updateMedicineName(medIndex, v)}
+                    placeholder="ex.: Otomax, Apoquel 16mg"
+                    style={{ marginBottom: 10 }}
+                  />
+
+                  <Text style={styles.miniLabel}>Horários</Text>
+                  <View style={{ gap: 8, marginBottom: 10 }}>
+                    {med.times.map((time, timeIndex) => (
+                      <View key={timeIndex} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                         <Input
                           value={time}
-                          onChangeText={(v) => updateTime(i, v)}
+                          onChangeText={(v) => updateMedicineTime(medIndex, timeIndex, v)}
                           placeholder="08:00"
                           style={{ flex: 1 }}
                         />
-                        {times.length > 1 && (
+                        {med.times.length > 1 && (
                           <Pressable
-                            onPress={() => removeTimeField(i)}
+                            onPress={() => removeMedicineTime(medIndex, timeIndex)}
                             style={[styles.smallBtn, { borderColor: c.border }]}>
                             <Text style={{ color: c.textFaint }}>–</Text>
                           </Pressable>
                         )}
                       </View>
                     ))}
-                    {times.length < 4 && (
-                      <Pressable onPress={addTimeField} style={[styles.addTimeBtn, { borderColor: c.accent }]}>
+                    {med.times.length < 4 && (
+                      <Pressable onPress={() => addMedicineTime(medIndex)} style={[styles.addTimeBtn, { borderColor: c.accent }]}>
                         <Text style={{ color: c.accent, fontWeight: '600', fontSize: 13 }}>+ Adicionar horário</Text>
                       </Pressable>
                     )}
                   </View>
-                </View>
 
-                <View>
                   <Text style={styles.miniLabel}>Por quantos dias</Text>
                   <Input
-                    value={durationDays}
-                    onChangeText={setDurationDays}
+                    value={med.durationDays}
+                    onChangeText={(v) => updateMedicineDuration(medIndex, v)}
                     placeholder="7"
                     keyboardType="number-pad"
                     style={{ maxWidth: 100 }}
                   />
                 </View>
-              </View>
-            )}
+              ))}
+
+              <Pressable onPress={addMedicineBlock} style={[styles.addMedicineBtn, { borderColor: c.accent }]}>
+                <Text style={{ color: c.accent, fontWeight: '700', fontSize: 14 }}>+ Adicionar outro remédio</Text>
+              </Pressable>
+            </View>
           </View>
+        )}
+
+        {isReceita && (
+          <Pressable
+            style={[styles.alarmSection, styles.alarmHeader, { borderColor: c.border, backgroundColor: c.card }]}
+            onPress={() => setAlarmOn((v) => !v)}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: c.text, fontWeight: '700', fontSize: 15 }}>⏰ Alarme de horário</Text>
+              <Muted style={{ fontSize: 12.5, marginTop: 2 }}>
+                Avisa em cada dose de todos os remédios acima, e na última do tratamento
+              </Muted>
+            </View>
+            <View style={[styles.toggle, { backgroundColor: alarmOn ? c.accent : c.cardSunken, borderColor: c.border }]}>
+              <View style={[styles.toggleDot, { backgroundColor: '#fff', alignSelf: alarmOn ? 'flex-end' : 'flex-start' }]} />
+            </View>
+          </Pressable>
         )}
 
         <Pressable
@@ -202,7 +306,7 @@ export default function AdicionarScreen() {
           onPress={handleSave}
           disabled={saving}>
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-            {saving ? 'Agendando alarme...' : 'Salvar na carteira'}
+            {saving ? 'Agendando alarmes...' : 'Salvar na carteira'}
           </Text>
         </Pressable>
       </View>
@@ -268,6 +372,32 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 12,
     paddingVertical: 14,
+    alignItems: 'center',
+  },
+  sectionLabel: {
+    fontFamily: Fonts.mono,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: '#8a988e',
+    marginBottom: 8,
+  },
+  medicineBlock: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+  },
+  medicineHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  addMedicineBtn: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   alarmSection: {

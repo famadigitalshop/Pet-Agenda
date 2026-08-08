@@ -39,6 +39,12 @@ export const pets: Pet[] = [
 
 export type HealthEventCategory = 'Vacina' | 'Receita' | 'Exame' | 'Cirurgia';
 
+export type Medicine = {
+  name: string;
+  times: string[]; // "HH:mm", ordenados
+  durationDays: number;
+};
+
 export type HealthEvent = {
   id: string;
   petId: string;
@@ -47,6 +53,7 @@ export type HealthEvent = {
   symptom?: string;
   title: string;
   vet: string;
+  medicines?: Medicine[]; // uma receita pode ter mais de um remédio
 };
 
 export const healthEvents: HealthEvent[] = [
@@ -58,6 +65,7 @@ export const healthEvents: HealthEvent[] = [
     symptom: 'Otite',
     title: 'Otomax — 3x ao dia por 7 dias',
     vet: 'Dra. Carolina Reis',
+    medicines: [{ name: 'Otomax', times: ['08:00', '14:00', '20:00'], durationDays: 7 }],
   },
   {
     id: '2',
@@ -72,9 +80,13 @@ export const healthEvents: HealthEvent[] = [
     petId: 'nina',
     date: '2026-03-10',
     category: 'Receita',
-    symptom: 'Alergia de pele',
-    title: 'Apoquel 16mg — 1x ao dia',
+    symptom: 'Alergia de pele e otite secundária',
+    title: 'Apoquel 16mg, Otomax',
     vet: 'Dra. Carolina Reis',
+    medicines: [
+      { name: 'Apoquel 16mg', times: ['08:00'], durationDays: 14 },
+      { name: 'Otomax', times: ['08:00', '20:00'], durationDays: 7 },
+    ],
   },
   {
     id: '4',
@@ -93,6 +105,7 @@ export const healthEvents: HealthEvent[] = [
     symptom: 'Otite',
     title: 'Otosynalar — 2x ao dia por 10 dias',
     vet: 'Dr. Marcelo Souza',
+    medicines: [{ name: 'Otosynalar', times: ['08:00', '20:00'], durationDays: 10 }],
   },
   {
     id: '6',

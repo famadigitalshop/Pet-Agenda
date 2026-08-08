@@ -2,13 +2,15 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card, CategoryTag, Eyebrow, Muted, ScreenTitle, StatusChip, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
-import { healthEvents, pets } from '@/constants/mockData';
+import { pets } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
 import { daysRemaining, useReminders } from '@/contexts/RemindersContext';
+import { useEvents } from '@/contexts/EventsContext';
 
 export default function DashboardScreen() {
   const c = useColors();
   const { reminders, cancelReminder } = useReminders();
+  const { events } = useEvents();
 
   const pendingReminders = pets.filter((p) => p.vaccinationStatus === 'atencao');
 
@@ -60,7 +62,10 @@ export default function DashboardScreen() {
 
       <View style={{ gap: 12, marginTop: 16 }}>
         {pets.map((pet) => {
-          const lastEvent = healthEvents.find((e) => e.petId === pet.id);
+          const lastEvent = events.find((e) => e.petId === pet.id);
+          const lastEventLabel = lastEvent?.medicines?.length
+            ? lastEvent.medicines.map((m) => m.name).join(', ')
+            : lastEvent?.title;
           return (
             <Card key={pet.id} style={styles.petCard}>
               <View style={styles.petRow}>
@@ -90,7 +95,7 @@ export default function DashboardScreen() {
               {lastEvent && (
                 <View style={[styles.lastEvent, { borderTopColor: c.border }]}>
                   <CategoryTag category={lastEvent.category} />
-                  <Text style={{ color: c.text, fontSize: 13, marginTop: 4 }}>{lastEvent.title}</Text>
+                  <Text style={{ color: c.text, fontSize: 13, marginTop: 4 }}>{lastEventLabel}</Text>
                   <Muted style={{ fontSize: 12, marginTop: 1 }}>
                     Registro mais recente · {formatDate(lastEvent.date)}
                   </Muted>

@@ -3,29 +3,33 @@ import { FlatList, StyleSheet, TextInput, View } from 'react-native';
 
 import { Card, CategoryTag, Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
-import { HealthEvent, healthCategories, healthEvents, pets } from '@/constants/mockData';
+import { HealthEvent, healthCategories, pets } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
+import { useEvents } from '@/contexts/EventsContext';
 
 export default function HistoricoScreen() {
   const c = useColors();
+  const { events } = useEvents();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
 
   const results = useMemo(() => {
-    return healthEvents
+    return events
       .filter((e) => (category ? e.category === category : true))
       .filter((e) => {
         if (!query.trim()) return true;
         const q = query.trim().toLowerCase();
+        const medicineNames = e.medicines?.map((m) => m.name).join(' ') ?? '';
         return (
           e.title.toLowerCase().includes(q) ||
+          medicineNames.toLowerCase().includes(q) ||
           e.symptom?.toLowerCase().includes(q) ||
           e.category.toLowerCase().includes(q) ||
           e.vet.toLowerCase().includes(q)
         );
       })
       .sort((a, b) => (a.date < b.date ? 1 : -1));
-  }, [query, category]);
+  }, [events, query, category]);
 
   const isRecallMoment = query.trim().length > 0 && results.length > 1;
 
@@ -88,14 +92,31 @@ export default function HistoricoScreen() {
 function EventCard({ event }: { event: HealthEvent }) {
   const c = useColors();
   const pet = pets.find((p) => p.id === event.petId);
+  const hasMultipleMedicines = (event.medicines?.length ?? 0) > 1;
+
   return (
     <Card style={{ marginBottom: 10 }}>
       <View style={styles.eventTop}>
         <CategoryTag category={event.category} />
         <Muted style={{ fontFamily: Fonts.mono, fontSize: 12 }}>{formatDate(event.date)}</Muted>
       </View>
-      <Text style={{ color: c.text, fontSize: 15.5, fontWeight: '600', marginTop: 8 }}>{event.title}</Text>
-      {event.symptom && <Muted style={{ marginTop: 2 }}>Motivo: {event.symptom}</Muted>}
+
+      {hasMultipleMedicines ? (
+        <View style={{ marginTop: 8, gap: 6 }}>
+          {event.medicines!.map((med, i) => (
+            <View key={i} style={i > 0 ? [styles.medicineRow, { borderTopColor: c.border }] : undefined}>
+              <Text style={{ color: c.text, fontSize: 15, fontWeight: '600' }}>{med.name}</Text>
+              <Muted style={{ fontSize: 12.5 }}>
+                {med.times.join(', ')} · {med.durationDays} dia{med.durationDays > 1 ? 's' : ''}
+              </Muted>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={{ color: c.text, fontSize: 15.5, fontWeight: '600', marginTop: 8 }}>{event.title}</Text>
+      )}
+
+      {event.symptom && <Muted style={{ marginTop: 6 }}>Motivo: {event.symptom}</Muted>}
       <Muted style={{ marginTop: 2, fontSize: 12.5 }}>
         {pet?.name} · {event.vet}
       </Muted>
@@ -137,5 +158,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  medicineRow: {
+    paddingTop: 6,
+    borderTopWidth: 1,
   },
 });
