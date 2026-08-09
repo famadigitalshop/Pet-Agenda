@@ -1,5 +1,6 @@
 import { SymbolView, SymbolViewProps } from 'expo-symbols';
 import { Tabs } from 'expo-router';
+import { Image } from 'react-native';
 import type { ColorValue } from 'react-native';
 
 import Colors from '@/constants/Colors';
@@ -13,6 +14,16 @@ function TabBarIcon({ ios, android, color }: { ios: string; android: string; col
       tintColor={color as string}
       size={26}
       style={{ marginBottom: -3 }}
+    />
+  );
+}
+
+function HeaderLogo() {
+  return (
+    <Image
+      source={require('../../assets/images/logo-wordmark.png')}
+      style={{ height: 24, width: 24 * (1173 / 283), marginLeft: 4 }}
+      resizeMode="contain"
     />
   );
 }
@@ -34,6 +45,8 @@ export default function TabLayout() {
         headerTintColor: colors.text,
         headerShadowVisible: false,
         headerShown: useClientOnlyValue(false, true),
+        headerTitle: () => <HeaderLogo />,
+        headerTitleAlign: 'left',
       }}>
       <Tabs.Screen
         name="index"
