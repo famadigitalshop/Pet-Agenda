@@ -14,18 +14,26 @@ export default function AdicionarPetScreen() {
 
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('Cão');
+  const [customSpecies, setCustomSpecies] = useState('');
   const [breed, setBreed] = useState('');
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const isOtherSpecies = species === 'Outro';
 
   function handleSave() {
     if (!name.trim()) {
       Alert.alert('Falta o nome', 'Digite o nome do seu pet.');
       return;
     }
+    if (isOtherSpecies && !customSpecies.trim()) {
+      Alert.alert('Qual espécie?', 'Digite a espécie do seu pet (ex.: coelho, hamster, pássaro).');
+      return;
+    }
+    const finalSpecies = isOtherSpecies ? customSpecies.trim() : species;
     setSaving(true);
-    const pet = addPet({ name, species, breed, age, weight });
+    const pet = addPet({ name, species: finalSpecies, breed, age, weight });
     setSaving(false);
     router.back();
     Alert.alert('Pet adicionado', `${pet.name} já está na sua carteira MeuPet+.`);
@@ -48,6 +56,15 @@ export default function AdicionarPetScreen() {
             <FilterChip key={option} label={option} active={species === option} onPress={() => setSpecies(option)} />
           ))}
         </View>
+        {isOtherSpecies && (
+          <TextField
+            value={customSpecies}
+            onChangeText={setCustomSpecies}
+            placeholder="ex.: coelho, hamster, pássaro"
+            style={{ marginTop: 10 }}
+            autoFocus
+          />
+        )}
       </View>
 
       <View style={{ marginBottom: 16 }}>
