@@ -1,6 +1,4 @@
-import { useColorScheme as useColorSchemeCore } from 'react-native';
-
-export const useColorScheme = () => {
-  const coreScheme = useColorSchemeCore();
-  return coreScheme === 'unspecified' ? 'light' : coreScheme;
-};
+// O MeuPet+ ainda não tem uma versão escura aprovada pela marca,
+// então o app fica sempre no tema claro/creme, independente do
+// modo do sistema (evita mostrar cores fora da identidade visual).
+export const useColorScheme = () => 'light' as const;

@@ -12,7 +12,7 @@ export default {
     textMuted: '#5f5470',
     textFaint: '#8d84a0',
     background: '#fbf1e8',
-    card: '#fffdf9',
+    card: '#fff7ec',
     cardSunken: '#f3e6d8',
     border: '#ecdccb',
     tint: brandOrange,
@@ -21,7 +21,7 @@ export default {
     riskLow: '#5b8a63',
     riskMed: '#b2842c',
     riskHigh: brandMagenta,
-    tabIconDefault: '#b6a9c4',
+    tabIconDefault: '#c3a8c4',
     tabIconSelected: brandOrange,
   },
   dark: {
