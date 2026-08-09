@@ -17,6 +17,7 @@ type PetsContextValue = {
   pets: Pet[];
   loading: boolean;
   addPet: (input: NewPetInput) => Pet;
+  replaceAll: (pets: Pet[]) => void;
 };
 
 const PetsContext = createContext<PetsContextValue | null>(null);
@@ -55,6 +56,9 @@ export function PetsProvider({ children }: { children: React.ReactNode }) {
         };
         setPets((prev) => [...prev, pet]);
         return pet;
+      },
+      replaceAll(nextPets) {
+        setPets(nextPets);
       },
     }),
     [pets, loading]

@@ -9,6 +9,7 @@ type EventsContextValue = {
   events: HealthEvent[];
   loading: boolean;
   addEvent: (event: HealthEvent) => void;
+  replaceAll: (events: HealthEvent[]) => void;
 };
 
 const EventsContext = createContext<EventsContextValue | null>(null);
@@ -37,6 +38,9 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       loading,
       addEvent(event) {
         setEvents((prev) => [event, ...prev]);
+      },
+      replaceAll(nextEvents) {
+        setEvents(nextEvents);
       },
     }),
     [events, loading]

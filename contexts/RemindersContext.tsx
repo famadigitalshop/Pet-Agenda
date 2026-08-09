@@ -40,6 +40,7 @@ type RemindersContextValue = {
   loading: boolean;
   addReminder: (input: AddReminderInput) => Promise<AddReminderResult>;
   cancelReminder: (id: string) => Promise<void>;
+  restoreReminders: (reminders: MedicationReminder[]) => Promise<void>;
 };
 
 const STORAGE_KEY = '@petcare/medication-reminders';
@@ -112,6 +113,33 @@ export function RemindersProvider({ children }: { children: React.ReactNode }) {
           await cancelMedicationNotifications(target.notificationIds);
         }
         setReminders((prev) => prev.filter((r) => r.id !== id));
+      },
+      async restoreReminders(imported) {
+        // cancela os alarmes atualmente agendados antes de substituir pelo backup
+        await Promise.all(reminders.map((r) => cancelMedicationNotifications(r.notificationIds)));
+
+        const rebuilt: MedicationReminder[] = [];
+        for (const r of imported) {
+          if (daysRemaining(r) > 0) {
+            const result = await scheduleMedicationNotifications({
+              petName: r.petName,
+              medicineName: r.medicineName,
+              dosage: r.dosage,
+              times: r.times,
+              startDate: r.startDate,
+              durationDays: r.durationDays,
+            });
+            rebuilt.push({
+              ...r,
+              notificationIds: result.notificationIds,
+              scheduledCount: result.scheduledCount,
+              totalOccurrences: result.totalOccurrences,
+            });
+          } else {
+            rebuilt.push({ ...r, notificationIds: [] });
+          }
+        }
+        setReminders(rebuilt);
       },
     }),
     [reminders, loading]

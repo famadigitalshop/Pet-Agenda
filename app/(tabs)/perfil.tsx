@@ -1,16 +1,69 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { Card, Eyebrow, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
 import { Text } from '@/components/Themed';
 import { usePets } from '@/contexts/PetsContext';
+import { useEvents } from '@/contexts/EventsContext';
+import { useReminders } from '@/contexts/RemindersContext';
+import { exportBackup, pickBackup } from '@/lib/backup';
 
 const settingsItems = ['Exportar histórico em PDF', 'Notificações e lembretes', 'Dados do tutor', 'Privacidade e LGPD', 'Sobre o MeuPet+'];
 
 export default function PerfilScreen() {
   const c = useColors();
-  const { pets } = usePets();
+  const { pets, replaceAll: replacePets } = usePets();
+  const { events, replaceAll: replaceEvents } = useEvents();
+  const { reminders, restoreReminders } = useReminders();
+  const [busy, setBusy] = useState<'export' | 'import' | null>(null);
+
+  async function handleExport() {
+    setBusy('export');
+    const result = await exportBackup({ pets, events, reminders });
+    setBusy(null);
+    if (!result.ok) {
+      Alert.alert('Não foi possível compartilhar', 'Seu aparelho não permite compartilhar arquivos agora. Tente novamente mais tarde.');
+      return;
+    }
+    Alert.alert(
+      'Backup pronto',
+      'Salve o arquivo num lugar seguro (Drive, e-mail, WhatsApp) — ele é sua cópia de segurança caso troque de celular ou reinstale o app.'
+    );
+  }
+
+  async function handleImport() {
+    setBusy('import');
+    const result = await pickBackup();
+    if (!result.ok) {
+      setBusy(null);
+      if (result.reason === 'invalid') {
+        Alert.alert('Arquivo inválido', 'Esse arquivo não parece ser um backup do MeuPet+.');
+      }
+      return;
+    }
+
+    const exportedDate = new Date(result.data.exportedAt).toLocaleDateString('pt-BR');
+    Alert.alert(
+      'Restaurar backup?',
+      `Isso vai substituir os dados atuais por ${result.data.pets.length} pet(s) e ${result.data.events.length} registro(s) do backup de ${exportedDate}.`,
+      [
+        { text: 'Cancelar', style: 'cancel', onPress: () => setBusy(null) },
+        {
+          text: 'Restaurar',
+          style: 'destructive',
+          onPress: async () => {
+            replacePets(result.data.pets);
+            replaceEvents(result.data.events);
+            await restoreReminders(result.data.reminders);
+            setBusy(null);
+            Alert.alert('Backup restaurado', 'Seus dados foram restaurados com sucesso.');
+          },
+        },
+      ]
+    );
+  }
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
@@ -53,6 +106,25 @@ export default function PerfilScreen() {
           <Text style={{ color: c.accent, fontWeight: '600' }}>+ Adicionar outro pet</Text>
         </Pressable>
       </View>
+
+      <SectionLabel>Backup e segurança</SectionLabel>
+      <Muted style={{ marginBottom: 10, fontSize: 12.5 }}>
+        Seus dados ficam só neste aparelho. Faça backup de vez em quando pra não perder o histórico se trocar de celular.
+      </Muted>
+      <Card style={{ padding: 0 }}>
+        <Pressable style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.border }]} onPress={handleExport} disabled={busy !== null}>
+          <Text style={{ color: c.text, fontSize: 14.5 }}>
+            {busy === 'export' ? 'Gerando backup...' : 'Fazer backup dos dados'}
+          </Text>
+          <Text style={{ color: c.textFaint }}>›</Text>
+        </Pressable>
+        <Pressable style={styles.settingRow} onPress={handleImport} disabled={busy !== null}>
+          <Text style={{ color: c.text, fontSize: 14.5 }}>
+            {busy === 'import' ? 'Lendo arquivo...' : 'Restaurar backup'}
+          </Text>
+          <Text style={{ color: c.textFaint }}>›</Text>
+        </Pressable>
+      </Card>
 
       <SectionLabel>Configurações</SectionLabel>
       <Card style={{ padding: 0 }}>
