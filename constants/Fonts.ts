@@ -1,8 +1,8 @@
 import { Platform } from 'react-native';
 
-// Serifada para títulos (clima de documento/carteirinha oficial),
-// sans do sistema pro corpo, mono pra tags/labels (clima de carimbo).
+// Sans arredondada e amigável pros títulos (clima MeuPet+), sans do
+// sistema pro corpo, mono pras tags/labels de categoria.
 export const Fonts = {
-  serif: Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' }),
+  serif: Platform.select({ ios: 'System', android: 'sans-serif-medium', default: 'system-ui' }),
   mono: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
 };

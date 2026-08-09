@@ -30,7 +30,7 @@ async function capturePhoto(): Promise<string | null> {
 
   const permission = await ImagePicker.requestCameraPermissionsAsync();
   if (permission.status !== 'granted') {
-    Alert.alert('Permissão da câmera negada', 'Para fotografar a receita, permita o acesso à câmera do PetCare Wallet nas configurações do aparelho.');
+    Alert.alert('Permissão da câmera negada', 'Para fotografar a receita, permita o acesso à câmera do MeuPet+ nas configurações do aparelho.');
     return null;
   }
   const result = await ImagePicker.launchCameraAsync({ quality: 0.6 });
@@ -169,7 +169,7 @@ export default function AdicionarScreen() {
           if (result.reason === 'permission-denied') {
             Alert.alert(
               'Permissão de notificação negada',
-              'Para receber os alarmes, permita notificações para o PetCare Wallet nas configurações do aparelho.'
+              'Para receber os alarmes, permita notificações para o MeuPet+ nas configurações do aparelho.'
             );
           } else {
             Alert.alert('Revise os dados', `Confira os horários e a duração de ${med.name}.`);

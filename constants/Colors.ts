@@ -1,44 +1,46 @@
-// Paleta do PetCare Wallet — tons de "carteirinha de vacinação":
-// verde-petróleo (confiança clínica) + vermelho-carimbo (destaque, ação).
-const tealDark = '#1f332e';
-const stampRed = '#a63a2e';
-const stampRedDark = '#e2704f';
+// Paleta do MeuPet+ — extraída da identidade visual da marca:
+// índigo profundo (texto/confiança) + laranja (ação/energia) + rosa-magenta (destaque secundário).
+const inkIndigo = '#2a1b45';
+const brandOrange = '#f0813e';
+const brandOrangeDark = '#ff9a5c';
+const brandMagenta = '#b23a6b';
+const brandMagentaDark = '#e2588e';
 
 export default {
   light: {
-    text: '#1f332e',
-    textMuted: '#52655c',
-    textFaint: '#7c8c81',
-    background: '#eef0e8',
-    card: '#f8f9f4',
-    cardSunken: '#e3e6d9',
-    border: '#d3d8c9',
-    tint: stampRed,
-    accent: stampRed,
-    accentSoft: '#f0dcd3',
-    riskLow: '#5b7a5e',
-    riskMed: '#a3781f',
-    riskHigh: stampRed,
-    tabIconDefault: '#9aa79b',
-    tabIconSelected: stampRed,
+    text: inkIndigo,
+    textMuted: '#5f5470',
+    textFaint: '#8d84a0',
+    background: '#fbf1e8',
+    card: '#fffdf9',
+    cardSunken: '#f3e6d8',
+    border: '#ecdccb',
+    tint: brandOrange,
+    accent: brandOrange,
+    accentSoft: '#fbe0cc',
+    riskLow: '#5b8a63',
+    riskMed: '#b2842c',
+    riskHigh: brandMagenta,
+    tabIconDefault: '#b6a9c4',
+    tabIconSelected: brandOrange,
   },
   dark: {
-    text: '#e9ede4',
-    textMuted: '#a9b8ac',
-    textFaint: '#7f9086',
-    background: '#131f1a',
-    card: '#1a2822',
-    cardSunken: '#0e1712',
-    border: '#2c3d35',
-    tint: stampRedDark,
-    accent: stampRedDark,
-    accentSoft: '#35241d',
-    riskLow: '#7fa583',
-    riskMed: '#cf9f3f',
-    riskHigh: stampRedDark,
-    tabIconDefault: '#5c6f63',
-    tabIconSelected: stampRedDark,
+    text: '#f5ede0',
+    textMuted: '#c9bdd6',
+    textFaint: '#8d84a0',
+    background: '#1c1430',
+    card: '#251b3d',
+    cardSunken: '#150f24',
+    border: '#3a2c55',
+    tint: brandOrangeDark,
+    accent: brandOrangeDark,
+    accentSoft: '#402a26',
+    riskLow: '#7fb587',
+    riskMed: '#dcb15c',
+    riskHigh: brandMagentaDark,
+    tabIconDefault: '#6b5e82',
+    tabIconSelected: brandOrangeDark,
   },
 };
 
-export const brand = { tealDark, stampRed, stampRedDark };
+export const brand = { inkIndigo, brandOrange, brandOrangeDark, brandMagenta, brandMagentaDark };

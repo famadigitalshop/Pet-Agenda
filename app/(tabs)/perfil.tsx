@@ -5,7 +5,7 @@ import { Fonts } from '@/constants/Fonts';
 import { pets } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
 
-const settingsItems = ['Exportar histórico em PDF', 'Notificações e lembretes', 'Dados do tutor', 'Privacidade e LGPD', 'Sobre o PetCare Wallet'];
+const settingsItems = ['Exportar histórico em PDF', 'Notificações e lembretes', 'Dados do tutor', 'Privacidade e LGPD', 'Sobre o MeuPet+'];
 
 export default function PerfilScreen() {
   const c = useColors();
@@ -13,7 +13,8 @@ export default function PerfilScreen() {
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
       <Eyebrow>Perfil</Eyebrow>
-      <ScreenTitle style={{ marginBottom: 20 }}>Sua conta</ScreenTitle>
+      <ScreenTitle style={{ marginBottom: 4 }}>Sua conta</ScreenTitle>
+      <Muted style={{ marginBottom: 20 }}>MeuPet+ · A história do seu melhor amigo, sempre com você.</Muted>
 
       <Card style={[styles.planCard, { backgroundColor: c.accent, borderColor: c.accent }]}>
         <Text style={{ fontFamily: Fonts.mono, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: '#fff', opacity: 0.85 }}>
