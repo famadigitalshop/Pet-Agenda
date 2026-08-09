@@ -4,10 +4,11 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
-import { HealthEventCategory, Medicine, healthCategories, pets } from '@/constants/mockData';
+import { HealthEventCategory, Medicine, healthCategories } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
 import { useReminders } from '@/contexts/RemindersContext';
 import { useEvents } from '@/contexts/EventsContext';
+import { usePets } from '@/contexts/PetsContext';
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -41,8 +42,9 @@ export default function AdicionarScreen() {
   const c = useColors();
   const { addReminder } = useReminders();
   const { addEvent } = useEvents();
+  const { pets } = usePets();
 
-  const [petId, setPetId] = useState(pets[0].id);
+  const [petId, setPetId] = useState(pets[0]?.id ?? '');
   const [category, setCategory] = useState<string | null>('Receita');
   const [symptom, setSymptom] = useState('');
   const [procedureTitle, setProcedureTitle] = useState('');

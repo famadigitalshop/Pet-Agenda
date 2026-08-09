@@ -3,9 +3,10 @@ import { FlatList, Image, StyleSheet, TextInput, View } from 'react-native';
 
 import { Card, CategoryTag, Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
-import { HealthEvent, healthCategories, pets } from '@/constants/mockData';
+import { HealthEvent, healthCategories } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
 import { useEvents } from '@/contexts/EventsContext';
+import { usePets } from '@/contexts/PetsContext';
 
 export default function HistoricoScreen() {
   const c = useColors();
@@ -91,6 +92,7 @@ export default function HistoricoScreen() {
 
 function EventCard({ event }: { event: HealthEvent }) {
   const c = useColors();
+  const { pets } = usePets();
   const pet = pets.find((p) => p.id === event.petId);
   const hasMedicines = (event.medicines?.length ?? 0) > 0;
 

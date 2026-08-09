@@ -6,12 +6,12 @@ export type Pet = {
   age: string;
   weight: string;
   initial: string;
-  vaccinationStatus: 'em-dia' | 'atencao';
-  vaccinationLabel: string;
+  vaccinationStatus?: 'em-dia' | 'atencao';
+  vaccinationLabel?: string;
   nextAppointment?: string;
 };
 
-export const pets: Pet[] = [
+export const seedPets: Pet[] = [
   {
     id: 'nina',
     name: 'Nina',

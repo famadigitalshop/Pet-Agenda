@@ -1,14 +1,16 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { Card, Eyebrow, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
-import { pets } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
+import { usePets } from '@/contexts/PetsContext';
 
 const settingsItems = ['Exportar histórico em PDF', 'Notificações e lembretes', 'Dados do tutor', 'Privacidade e LGPD', 'Sobre o MeuPet+'];
 
 export default function PerfilScreen() {
   const c = useColors();
+  const { pets } = usePets();
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
@@ -47,7 +49,7 @@ export default function PerfilScreen() {
             <Text style={{ color: c.textFaint }}>›</Text>
           </Card>
         ))}
-        <Pressable style={[styles.addPet, { borderColor: c.border }]}>
+        <Pressable style={[styles.addPet, { borderColor: c.border }]} onPress={() => router.push('/adicionar-pet')}>
           <Text style={{ color: c.accent, fontWeight: '600' }}>+ Adicionar outro pet</Text>
         </Pressable>
       </View>

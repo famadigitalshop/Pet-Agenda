@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View, ViewProps, TextProps } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View, ViewProps, TextProps } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -122,6 +122,46 @@ export function FilterChip({
         {label}
       </Text>
     </Pressable>
+  );
+}
+
+export function FieldLabel({ children }: { children: React.ReactNode }) {
+  const c = useColors();
+  return (
+    <Text
+      style={{
+        fontFamily: Fonts.mono,
+        fontSize: 11,
+        letterSpacing: 0.6,
+        textTransform: 'uppercase',
+        color: c.textFaint,
+        marginBottom: 6,
+      }}>
+      {children}
+    </Text>
+  );
+}
+
+export function TextField(props: TextInputProps) {
+  const c = useColors();
+  return (
+    <TextInput
+      placeholderTextColor={c.textFaint}
+      style={[
+        {
+          borderWidth: 1,
+          borderRadius: 10,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          fontSize: 15,
+          backgroundColor: c.card,
+          borderColor: c.border,
+          color: c.text,
+        },
+        props.style,
+      ]}
+      {...props}
+    />
   );
 }
 

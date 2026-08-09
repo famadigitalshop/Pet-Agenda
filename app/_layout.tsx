@@ -6,6 +6,8 @@ import 'react-native-reanimated';
 
 import { RemindersProvider } from '@/contexts/RemindersContext';
 import { EventsProvider } from '@/contexts/EventsContext';
+import { PetsProvider } from '@/contexts/PetsContext';
+import Colors from '@/constants/Colors';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -44,13 +46,26 @@ export default function RootLayout() {
 function RootLayoutNav() {
   return (
     <ThemeProvider value={DefaultTheme}>
-      <EventsProvider>
-        <RemindersProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-          </Stack>
-        </RemindersProvider>
-      </EventsProvider>
+      <PetsProvider>
+        <EventsProvider>
+          <RemindersProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="adicionar-pet"
+                options={{
+                  presentation: 'modal',
+                  headerShown: true,
+                  title: 'Novo pet',
+                  headerStyle: { backgroundColor: Colors.light.background },
+                  headerTintColor: Colors.light.text,
+                  headerShadowVisible: false,
+                }}
+              />
+            </Stack>
+          </RemindersProvider>
+        </EventsProvider>
+      </PetsProvider>
     </ThemeProvider>
   );
 }

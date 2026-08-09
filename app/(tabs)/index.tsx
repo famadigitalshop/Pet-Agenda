@@ -2,15 +2,16 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card, CategoryTag, Eyebrow, Muted, ScreenTitle, StatusChip, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
-import { pets } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
 import { daysRemaining, useReminders } from '@/contexts/RemindersContext';
 import { useEvents } from '@/contexts/EventsContext';
+import { usePets } from '@/contexts/PetsContext';
 
 export default function DashboardScreen() {
   const c = useColors();
   const { reminders, cancelReminder } = useReminders();
   const { events } = useEvents();
+  const { pets } = usePets();
 
   const pendingReminders = pets.filter((p) => p.vaccinationStatus === 'atencao');
 
@@ -26,7 +27,7 @@ export default function DashboardScreen() {
             Lembrete pendente
           </Text>
           <Text style={{ color: c.text, fontSize: 14 }}>
-            {pendingReminders[0].name}: {pendingReminders[0].vaccinationLabel.toLowerCase()}
+            {pendingReminders[0].name}: {pendingReminders[0].vaccinationLabel?.toLowerCase()}
           </Text>
         </Card>
       )}
@@ -86,10 +87,11 @@ export default function DashboardScreen() {
               </View>
 
               <View style={{ marginTop: 12, gap: 8 }}>
-                <StatusChip
-                  label={pet.vaccinationLabel}
-                  tone={pet.vaccinationStatus === 'em-dia' ? 'low' : 'med'}
-                />
+                {pet.vaccinationLabel ? (
+                  <StatusChip label={pet.vaccinationLabel} tone={pet.vaccinationStatus === 'em-dia' ? 'low' : 'med'} />
+                ) : (
+                  <Muted style={{ fontSize: 12.5 }}>Nenhuma vacina registrada ainda</Muted>
+                )}
                 {pet.nextAppointment && <Muted>Próxima consulta: {pet.nextAppointment}</Muted>}
               </View>
 
