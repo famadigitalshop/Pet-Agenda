@@ -55,6 +55,7 @@ export default function AdicionarScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editingWasPending, setEditingWasPending] = useState(false);
 
   const pet = pets.find((p) => p.id === petId) ?? pets[0];
   const isReceita = category === 'Receita';
@@ -65,10 +66,12 @@ export default function AdicionarScreen() {
     const target = events.find((e) => e.id === params.editEventId);
     if (!target) return;
     setEditingEventId(target.id);
+    setEditingWasPending(target.status === 'pendente');
     setPetId(target.petId);
     setCategory(target.category);
     setSymptom(target.symptom ?? '');
     setPhotoUri(target.photoUri ?? null);
+    setProcedureTitle(target.category !== 'Receita' ? target.title : '');
     if (target.medicines?.length) {
       setMedicines(
         target.medicines.map((m) => ({ name: m.name, dosage: m.dosage, times: m.times, durationDays: String(m.durationDays) }))
@@ -141,6 +144,7 @@ export default function AdicionarScreen() {
     setMedicines([emptyMedicine()]);
     setPhotoUri(null);
     setEditingEventId(null);
+    setEditingWasPending(false);
   }
 
   async function handleSavePending() {
@@ -177,17 +181,29 @@ export default function AdicionarScreen() {
         Alert.alert('Falta a informação', 'Preencha o campo Remédio / procedimento.');
         return;
       }
-      addEvent({
-        id: `${Date.now()}`,
-        petId: pet.id,
-        date: today,
-        category: category as HealthEventCategory,
-        symptom: symptom.trim() || undefined,
-        title: procedureTitle.trim(),
-        vet: 'Você',
-        photoUri: photoUri ?? undefined,
-      });
-      Alert.alert('Registro salvo', 'Documento adicionado à linha do tempo.');
+      if (editingEventId) {
+        updateEvent(editingEventId, {
+          petId: pet.id,
+          category: category as HealthEventCategory,
+          symptom: symptom.trim() || undefined,
+          title: procedureTitle.trim(),
+          photoUri: photoUri ?? undefined,
+          status: 'completo',
+        });
+        Alert.alert('Registro atualizado', 'As alterações foram salvas.');
+      } else {
+        addEvent({
+          id: `${Date.now()}`,
+          petId: pet.id,
+          date: today,
+          category: category as HealthEventCategory,
+          symptom: symptom.trim() || undefined,
+          title: procedureTitle.trim(),
+          vet: 'Você',
+          photoUri: photoUri ?? undefined,
+        });
+        Alert.alert('Registro salvo', 'Documento adicionado à linha do tempo.');
+      }
       resetForm();
       return;
     }
@@ -252,6 +268,7 @@ export default function AdicionarScreen() {
     if (editingEventId) {
       updateEvent(editingEventId, {
         petId: pet.id,
+        category: 'Receita',
         symptom: symptom.trim() || undefined,
         title: parsed.map((m) => m.name).join(', '),
         medicines: parsed,
@@ -285,11 +302,15 @@ export default function AdicionarScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
-      <Eyebrow>{editingEventId ? 'Completar registro' : 'Novo registro'}</Eyebrow>
-      <ScreenTitle style={{ marginBottom: 4 }}>{editingEventId ? 'Completar receita pendente' : 'Escanear documento'}</ScreenTitle>
+      <Eyebrow>{editingEventId ? (editingWasPending ? 'Completar registro' : 'Editar registro') : 'Novo registro'}</Eyebrow>
+      <ScreenTitle style={{ marginBottom: 4 }}>
+        {editingEventId ? (editingWasPending ? 'Completar receita pendente' : 'Editar registro') : 'Escanear documento'}
+      </ScreenTitle>
       <Muted style={{ marginBottom: 18 }}>
         {editingEventId
-          ? 'Preencha os remédios dessa receita — a foto que você já tirou continua anexada.'
+          ? editingWasPending
+            ? 'Preencha os remédios dessa receita — a foto que você já tirou continua anexada.'
+            : 'Altere os dados desse registro e salve.'
           : 'Fotografe a receita ou carteirinha. Sem tempo agora? Salve só a foto como pendente e complete os detalhes depois.'}
       </Muted>
 
@@ -470,7 +491,13 @@ export default function AdicionarScreen() {
           onPress={handleSave}
           disabled={saving}>
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-            {saving ? 'Agendando alarmes...' : editingEventId ? 'Concluir registro' : 'Salvar na carteira'}
+            {saving
+              ? 'Agendando alarmes...'
+              : editingEventId
+                ? editingWasPending
+                  ? 'Concluir registro'
+                  : 'Salvar alterações'
+                : 'Salvar na carteira'}
           </Text>
         </Pressable>
       </View>

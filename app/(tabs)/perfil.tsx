@@ -129,18 +129,20 @@ export default function PerfilScreen() {
       <SectionLabel>Pets cadastrados</SectionLabel>
       <View style={{ gap: 10 }}>
         {pets.map((pet) => (
-          <Card key={pet.id} style={styles.petRow}>
-            <View style={[styles.avatar, { backgroundColor: c.cardSunken }]}>
-              <Text style={{ color: c.text, fontFamily: Fonts.serif, fontWeight: '600' }}>{pet.initial}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: c.text, fontWeight: '600' }}>{pet.name}</Text>
-              <Muted style={{ fontSize: 12.5 }}>
-                {pet.species} · {pet.breed}
-              </Muted>
-            </View>
-            <Text style={{ color: c.textFaint }}>›</Text>
-          </Card>
+          <Pressable key={pet.id} onPress={() => router.push({ pathname: '/adicionar-pet', params: { editPetId: pet.id } })}>
+            <Card style={styles.petRow}>
+              <View style={[styles.avatar, { backgroundColor: c.cardSunken }]}>
+                <Text style={{ color: c.text, fontFamily: Fonts.serif, fontWeight: '600' }}>{pet.initial}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: c.text, fontWeight: '600' }}>{pet.name}</Text>
+                <Muted style={{ fontSize: 12.5 }}>
+                  {pet.species} · {pet.breed}
+                </Muted>
+              </View>
+              <Text style={{ color: c.textFaint }}>›</Text>
+            </Card>
+          </Pressable>
         ))}
         <Pressable style={[styles.addPet, { borderColor: c.border }]} onPress={() => router.push('/adicionar-pet')}>
           <Text style={{ color: c.accent, fontWeight: '600' }}>+ Adicionar outro pet</Text>

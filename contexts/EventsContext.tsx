@@ -10,6 +10,8 @@ type EventsContextValue = {
   loading: boolean;
   addEvent: (event: HealthEvent) => void;
   updateEvent: (id: string, patch: Partial<HealthEvent>) => void;
+  deleteEvent: (id: string) => void;
+  deleteEventsForPet: (petId: string) => void;
   replaceAll: (events: HealthEvent[]) => void;
 };
 
@@ -42,6 +44,12 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       },
       updateEvent(id, patch) {
         setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+      },
+      deleteEvent(id) {
+        setEvents((prev) => prev.filter((e) => e.id !== id));
+      },
+      deleteEventsForPet(petId) {
+        setEvents((prev) => prev.filter((e) => e.petId !== petId));
       },
       replaceAll(nextEvents) {
         setEvents(nextEvents);

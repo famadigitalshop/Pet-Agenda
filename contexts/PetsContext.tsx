@@ -11,12 +11,19 @@ type NewPetInput = {
   breed: string;
   age: string;
   weight: string;
+  allergies?: string;
+  vetContact?: string;
+  vaccinationStatus?: 'em-dia' | 'atencao';
+  vaccinationLabel?: string;
+  nextAppointment?: string;
 };
 
 type PetsContextValue = {
   pets: Pet[];
   loading: boolean;
   addPet: (input: NewPetInput) => Pet;
+  updatePet: (id: string, input: NewPetInput) => void;
+  deletePet: (id: string) => void;
   replaceAll: (pets: Pet[]) => void;
 };
 
@@ -53,9 +60,39 @@ export function PetsProvider({ children }: { children: React.ReactNode }) {
           age: input.age.trim() || '—',
           weight: input.weight.trim() || '—',
           initial: input.name.trim().charAt(0).toUpperCase() || '?',
+          allergies: input.allergies?.trim() || undefined,
+          vetContact: input.vetContact?.trim() || undefined,
+          vaccinationStatus: input.vaccinationStatus,
+          vaccinationLabel: input.vaccinationLabel?.trim() || undefined,
+          nextAppointment: input.nextAppointment?.trim() || undefined,
         };
         setPets((prev) => [...prev, pet]);
         return pet;
+      },
+      updatePet(id, input) {
+        setPets((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  name: input.name.trim(),
+                  species: input.species.trim(),
+                  breed: input.breed.trim() || 'SRD',
+                  age: input.age.trim() || '—',
+                  weight: input.weight.trim() || '—',
+                  initial: input.name.trim().charAt(0).toUpperCase() || '?',
+                  allergies: input.allergies?.trim() || undefined,
+                  vetContact: input.vetContact?.trim() || undefined,
+                  vaccinationStatus: input.vaccinationStatus,
+                  vaccinationLabel: input.vaccinationLabel?.trim() || undefined,
+                  nextAppointment: input.nextAppointment?.trim() || undefined,
+                }
+              : p
+          )
+        );
+      },
+      deletePet(id) {
+        setPets((prev) => prev.filter((p) => p.id !== id));
       },
       replaceAll(nextPets) {
         setPets(nextPets);

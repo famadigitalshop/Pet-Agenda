@@ -40,6 +40,7 @@ type RemindersContextValue = {
   loading: boolean;
   addReminder: (input: AddReminderInput) => Promise<AddReminderResult>;
   cancelReminder: (id: string) => Promise<void>;
+  cancelRemindersForPet: (petId: string) => Promise<void>;
   restoreReminders: (reminders: MedicationReminder[]) => Promise<void>;
 };
 
@@ -113,6 +114,11 @@ export function RemindersProvider({ children }: { children: React.ReactNode }) {
           await cancelMedicationNotifications(target.notificationIds);
         }
         setReminders((prev) => prev.filter((r) => r.id !== id));
+      },
+      async cancelRemindersForPet(petId) {
+        const targets = reminders.filter((r) => r.petId === petId);
+        await Promise.all(targets.map((r) => cancelMedicationNotifications(r.notificationIds)));
+        setReminders((prev) => prev.filter((r) => r.petId !== petId));
       },
       async restoreReminders(imported) {
         // cancela os alarmes atualmente agendados antes de substituir pelo backup

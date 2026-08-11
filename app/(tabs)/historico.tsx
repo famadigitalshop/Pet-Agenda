@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { Card, CategoryTag, Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
@@ -94,6 +94,7 @@ export default function HistoricoScreen() {
 function EventCard({ event }: { event: HealthEvent }) {
   const c = useColors();
   const { pets } = usePets();
+  const { deleteEvent } = useEvents();
   const pet = pets.find((p) => p.id === event.petId);
   const hasMedicines = (event.medicines?.length ?? 0) > 0;
   const isPending = event.status === 'pendente';
@@ -109,8 +110,15 @@ function EventCard({ event }: { event: HealthEvent }) {
     });
   }
 
-  function handleCompletePending() {
+  function handleEdit() {
     router.push({ pathname: '/(tabs)/adicionar', params: { editEventId: event.id } });
+  }
+
+  function handleDelete() {
+    Alert.alert('Excluir registro?', 'Essa ação não pode ser desfeita.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Excluir', style: 'destructive', onPress: () => deleteEvent(event.id) },
+    ]);
   }
 
   return (
@@ -149,17 +157,27 @@ function EventCard({ event }: { event: HealthEvent }) {
         {pet?.name} · {event.vet}
       </Muted>
 
-      {isPending ? (
-        <Pressable onPress={handleCompletePending} style={[styles.actionBtn, { borderColor: c.accent }]}>
-          <Text style={{ color: c.accent, fontWeight: '700', fontSize: 13 }}>Completar detalhes</Text>
-        </Pressable>
-      ) : (
-        hasMedicines && (
-          <Pressable onPress={handleRepeat} style={styles.repeatBtn}>
-            <Text style={{ color: c.textMuted, fontWeight: '600', fontSize: 12.5 }}>↻ Repetir tratamento</Text>
+      <View style={styles.actionsRow}>
+        {isPending ? (
+          <Pressable onPress={handleEdit} style={[styles.actionBtn, { borderColor: c.accent }]}>
+            <Text style={{ color: c.accent, fontWeight: '700', fontSize: 13 }}>Completar detalhes</Text>
           </Pressable>
-        )
-      )}
+        ) : (
+          <>
+            <Pressable onPress={handleEdit}>
+              <Text style={{ color: c.textMuted, fontWeight: '600', fontSize: 12.5 }}>✎ Editar</Text>
+            </Pressable>
+            {hasMedicines && (
+              <Pressable onPress={handleRepeat}>
+                <Text style={{ color: c.textMuted, fontWeight: '600', fontSize: 12.5 }}>↻ Repetir tratamento</Text>
+              </Pressable>
+            )}
+          </>
+        )}
+        <Pressable onPress={handleDelete}>
+          <Text style={{ color: c.riskHigh, fontWeight: '600', fontSize: 12.5 }}>Excluir</Text>
+        </Pressable>
+      </View>
     </Card>
   );
 }
@@ -208,12 +226,13 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 6,
   },
-  repeatBtn: {
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 18,
     marginTop: 10,
-    alignSelf: 'flex-start',
   },
   actionBtn: {
-    marginTop: 10,
     alignSelf: 'flex-start',
     borderWidth: 1,
     borderRadius: 8,
