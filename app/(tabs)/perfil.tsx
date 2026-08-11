@@ -9,6 +9,7 @@ import { Pet } from '@/constants/mockData';
 import { usePets } from '@/contexts/PetsContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { useReminders } from '@/contexts/RemindersContext';
+import { useTrial } from '@/contexts/TrialContext';
 import { exportBackup, pickBackup } from '@/lib/backup';
 import { exportHistoryPdf } from '@/lib/exportHistory';
 
@@ -19,6 +20,7 @@ export default function PerfilScreen() {
   const { pets, replaceAll: replacePets } = usePets();
   const { events, replaceAll: replaceEvents } = useEvents();
   const { reminders, restoreReminders } = useReminders();
+  const { isSubscribed, daysLeft, subscribe } = useTrial();
   const [busy, setBusy] = useState<'export' | 'import' | 'export-history' | null>(null);
 
   async function handleExport() {
@@ -106,14 +108,22 @@ export default function PerfilScreen() {
           Plano atual
         </Text>
         <Text style={{ color: '#fff', fontSize: 20, fontFamily: Fonts.serif, fontWeight: '700', marginTop: 4 }}>
-          Gratuito
+          {isSubscribed ? 'Premium ✓' : `Teste grátis · ${daysLeft} dia${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}`}
         </Text>
-        <Text style={{ color: '#fff', opacity: 0.9, fontSize: 13, marginTop: 6 }}>
-          Assine o Premium por R$ 12,90/mês e desbloqueie busca completa por sintoma, pets ilimitados e exportação para o vet.
-        </Text>
-        <Pressable style={styles.upgradeButton}>
-          <Text style={{ color: c.accent, fontWeight: '700', fontSize: 14 }}>Assinar Premium</Text>
-        </Pressable>
+        {isSubscribed ? (
+          <Text style={{ color: '#fff', opacity: 0.9, fontSize: 13, marginTop: 6 }}>
+            Sua assinatura está ativa. Obrigada por apoiar o MeuPet+!
+          </Text>
+        ) : (
+          <>
+            <Text style={{ color: '#fff', opacity: 0.9, fontSize: 13, marginTop: 6 }}>
+              Depois do teste grátis, assine por R$ 12,90/mês e continue com busca completa por sintoma, alarmes de remédio e histórico em PDF.
+            </Text>
+            <Pressable style={styles.upgradeButton} onPress={subscribe}>
+              <Text style={{ color: c.accent, fontWeight: '700', fontSize: 14 }}>Assinar Premium</Text>
+            </Pressable>
+          </>
+        )}
       </Card>
 
       <SectionLabel>Pets cadastrados</SectionLabel>

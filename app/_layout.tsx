@@ -7,6 +7,8 @@ import 'react-native-reanimated';
 import { RemindersProvider } from '@/contexts/RemindersContext';
 import { EventsProvider } from '@/contexts/EventsContext';
 import { PetsProvider } from '@/contexts/PetsContext';
+import { TrialProvider, useTrial } from '@/contexts/TrialContext';
+import Paywall from '@/components/Paywall';
 import Colors from '@/constants/Colors';
 
 export {
@@ -46,26 +48,44 @@ export default function RootLayout() {
 function RootLayoutNav() {
   return (
     <ThemeProvider value={DefaultTheme}>
-      <PetsProvider>
-        <EventsProvider>
-          <RemindersProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="adicionar-pet"
-                options={{
-                  presentation: 'modal',
-                  headerShown: true,
-                  title: 'Novo pet',
-                  headerStyle: { backgroundColor: Colors.light.background },
-                  headerTintColor: Colors.light.text,
-                  headerShadowVisible: false,
-                }}
-              />
-            </Stack>
-          </RemindersProvider>
-        </EventsProvider>
-      </PetsProvider>
+      <TrialProvider>
+        <PetsProvider>
+          <EventsProvider>
+            <RemindersProvider>
+              <TrialGate />
+            </RemindersProvider>
+          </EventsProvider>
+        </PetsProvider>
+      </TrialProvider>
     </ThemeProvider>
+  );
+}
+
+function TrialGate() {
+  const { loading, isPremium } = useTrial();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!isPremium) {
+    return <Paywall />;
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="adicionar-pet"
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          title: 'Novo pet',
+          headerStyle: { backgroundColor: Colors.light.background },
+          headerTintColor: Colors.light.text,
+          headerShadowVisible: false,
+        }}
+      />
+    </Stack>
   );
 }
