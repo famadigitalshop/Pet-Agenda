@@ -13,7 +13,7 @@ import { useTrial } from '@/contexts/TrialContext';
 import { exportBackup, pickBackup } from '@/lib/backup';
 import { exportHistoryPdf } from '@/lib/exportHistory';
 
-const settingsItems = ['Notificações e lembretes', 'Dados do tutor', 'Privacidade e LGPD', 'Sobre o MeuPet+'];
+const settingsItems = ['Notificações e lembretes', 'Dados do tutor', 'Sobre o MeuPet+'];
 
 export default function PerfilScreen() {
   const c = useColors();
@@ -179,6 +179,12 @@ export default function PerfilScreen() {
           <Text style={{ color: c.text, fontSize: 14.5 }}>
             {busy === 'export-history' ? 'Gerando PDF...' : 'Exportar histórico em PDF'}
           </Text>
+          <Text style={{ color: c.textFaint }}>›</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.border }]}
+          onPress={() => router.push('/privacidade')}>
+          <Text style={{ color: c.text, fontSize: 14.5 }}>Privacidade e LGPD</Text>
           <Text style={{ color: c.textFaint }}>›</Text>
         </Pressable>
         {settingsItems.map((item, i) => (

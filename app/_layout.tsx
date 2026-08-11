@@ -86,6 +86,17 @@ function TrialGate() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="privacidade"
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          title: 'Privacidade e LGPD',
+          headerStyle: { backgroundColor: Colors.light.background },
+          headerTintColor: Colors.light.text,
+          headerShadowVisible: false,
+        }}
+      />
     </Stack>
   );
 }
