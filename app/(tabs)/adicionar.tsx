@@ -300,6 +300,23 @@ export default function AdicionarScreen() {
     resetForm();
   }
 
+  if (pets.length === 0) {
+    return (
+      <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
+        <Eyebrow>Novo registro</Eyebrow>
+        <ScreenTitle style={{ marginBottom: 4 }}>Cadastre um pet primeiro</ScreenTitle>
+        <Muted style={{ marginBottom: 18 }}>
+          Antes de adicionar uma receita, vacina ou exame, cadastre o pet que vai receber esse registro.
+        </Muted>
+        <Pressable
+          style={[styles.saveButton, { backgroundColor: c.accent }]}
+          onPress={() => router.push('/adicionar-pet')}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>+ Cadastrar meu primeiro pet</Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
       <Eyebrow>{editingEventId ? (editingWasPending ? 'Completar registro' : 'Editar registro') : 'Novo registro'}</Eyebrow>

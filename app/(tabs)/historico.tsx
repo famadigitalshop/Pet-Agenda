@@ -82,7 +82,9 @@ export default function HistoricoScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <Muted style={{ paddingHorizontal: 20, marginTop: 20 }}>
-            Nada encontrado. Tente outro termo ou categoria.
+            {events.length === 0
+              ? 'Você ainda não tem nenhum registro. Adicione uma receita, vacina ou exame na aba Adicionar.'
+              : 'Nada encontrado. Tente outro termo ou categoria.'}
           </Muted>
         }
         renderItem={({ item }) => <EventCard event={item} />}

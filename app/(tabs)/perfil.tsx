@@ -145,7 +145,9 @@ export default function PerfilScreen() {
           </Pressable>
         ))}
         <Pressable style={[styles.addPet, { borderColor: c.border }]} onPress={() => router.push('/adicionar-pet')}>
-          <Text style={{ color: c.accent, fontWeight: '600' }}>+ Adicionar outro pet</Text>
+          <Text style={{ color: c.accent, fontWeight: '600' }}>
+            {pets.length === 0 ? '+ Cadastrar meu primeiro pet' : '+ Adicionar outro pet'}
+          </Text>
         </Pressable>
       </View>
 

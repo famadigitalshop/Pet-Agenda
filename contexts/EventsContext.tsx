@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { HealthEvent, healthEvents as seedEvents } from '@/constants/mockData';
+import { HealthEvent } from '@/constants/mockData';
 
 const STORAGE_KEY = '@petcare/health-events';
 
@@ -18,7 +18,7 @@ type EventsContextValue = {
 const EventsContext = createContext<EventsContextValue | null>(null);
 
 export function EventsProvider({ children }: { children: React.ReactNode }) {
-  const [events, setEvents] = useState<HealthEvent[]>(seedEvents);
+  const [events, setEvents] = useState<HealthEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

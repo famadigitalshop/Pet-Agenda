@@ -13,7 +13,7 @@ export default function DashboardScreen() {
   const c = useColors();
   const { reminders, cancelReminder } = useReminders();
   const { events } = useEvents();
-  const { pets } = usePets();
+  const { pets, loading: petsLoading } = usePets();
 
   const pendingReminders = pets.filter((p) => p.vaccinationStatus === 'atencao');
   const pendingEvents = events.filter((e) => e.status === 'pendente');
@@ -30,11 +30,42 @@ export default function DashboardScreen() {
     }
   }
 
+  if (petsLoading) {
+    return <View style={{ flex: 1, backgroundColor: c.background }} />;
+  }
+
+  if (pets.length === 0) {
+    return (
+      <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
+        <Eyebrow>Bem-vindo</Eyebrow>
+        <ScreenTitle style={{ marginBottom: 4 }}>Bem-vindo ao MeuPet+</ScreenTitle>
+        <Muted style={{ marginBottom: 24 }}>
+          Guarde o histórico de saúde do seu pet e encontre em segundos o que ele já tomou — mesmo que tenha sido anos
+          atrás.
+        </Muted>
+
+        <Card style={styles.welcomeCard}>
+          <WelcomeBullet icon="🔍" text="Busque por sintoma ou remédio e ache tudo na hora" />
+          <WelcomeBullet icon="⏰" text="Alarmes pra não esquecer nenhum horário de remédio" />
+          <WelcomeBullet icon="🆘" text="Ficha de emergência pronta pra levar ao vet" />
+        </Card>
+
+        <Pressable
+          style={[styles.ctaButton, { backgroundColor: c.accent }]}
+          onPress={() => router.push('/adicionar-pet')}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>+ Cadastrar meu primeiro pet</Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
       <Eyebrow>08 ago · Início</Eyebrow>
       <ScreenTitle style={{ marginBottom: 4 }}>Seus pets</ScreenTitle>
-      <Muted style={{ marginBottom: 20 }}>{pets.length} pets cadastrados nesta carteira</Muted>
+      <Muted style={{ marginBottom: 20 }}>
+        {pets.length} pet{pets.length !== 1 ? 's' : ''} cadastrado{pets.length !== 1 ? 's' : ''} nesta carteira
+      </Muted>
 
       {pendingReminders.length > 0 && (
         <Card style={[styles.alertCard, { borderColor: c.riskMed, backgroundColor: c.accentSoft }]}>
@@ -143,6 +174,16 @@ export default function DashboardScreen() {
   );
 }
 
+function WelcomeBullet({ icon, text }: { icon: string; text: string }) {
+  const c = useColors();
+  return (
+    <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+      <Text style={{ fontSize: 17 }}>{icon}</Text>
+      <Text style={{ color: c.text, fontSize: 14, flex: 1, lineHeight: 20 }}>{text}</Text>
+    </View>
+  );
+}
+
 function formatDate(iso: string) {
   const [y, m, d] = iso.split('-');
   const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -187,5 +228,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
+  },
+  welcomeCard: {
+    gap: 14,
+    marginBottom: 20,
+  },
+  ctaButton: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
   },
 });

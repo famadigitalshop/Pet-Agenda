@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { Pet, seedPets } from '@/constants/mockData';
+import { Pet } from '@/constants/mockData';
 
 const STORAGE_KEY = '@petcare/pets';
 
@@ -30,7 +30,7 @@ type PetsContextValue = {
 const PetsContext = createContext<PetsContextValue | null>(null);
 
 export function PetsProvider({ children }: { children: React.ReactNode }) {
-  const [pets, setPets] = useState<Pet[]>(seedPets);
+  const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
