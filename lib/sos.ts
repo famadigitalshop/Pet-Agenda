@@ -1,9 +1,6 @@
-import { Platform } from 'react-native';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-
 import { Pet } from '@/constants/mockData';
 import { MedicationReminder } from '@/contexts/RemindersContext';
+import { escapeHtml, shareHtmlAsPdf, ShareHtmlResult } from '@/lib/pdf';
 
 function buildHtml(pet: Pet, activeReminders: MedicationReminder[]) {
   const treatmentsHtml = activeReminders.length
@@ -54,32 +51,9 @@ function buildHtml(pet: Pet, activeReminders: MedicationReminder[]) {
 </html>`;
 }
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]!);
-}
-
-export type SosResult = { ok: true } | { ok: false; reason: 'sharing-unavailable' | 'popup-blocked' };
+export type SosResult = ShareHtmlResult;
 
 export async function generateSosReport(pet: Pet, activeReminders: MedicationReminder[]): Promise<SosResult> {
   const html = buildHtml(pet, activeReminders);
-
-  if (Platform.OS === 'web') {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      return { ok: false, reason: 'popup-blocked' };
-    }
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    return { ok: true };
-  }
-
-  const { uri } = await Print.printToFileAsync({ html });
-  const available = await Sharing.isAvailableAsync();
-  if (!available) {
-    return { ok: false, reason: 'sharing-unavailable' };
-  }
-  await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Ficha de emergência de ${pet.name}` });
-  return { ok: true };
+  return shareHtmlAsPdf(html, `Ficha de emergência de ${pet.name}`);
 }

@@ -5,19 +5,21 @@ import { router } from 'expo-router';
 import { Card, Eyebrow, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
 import { Text } from '@/components/Themed';
+import { Pet } from '@/constants/mockData';
 import { usePets } from '@/contexts/PetsContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { useReminders } from '@/contexts/RemindersContext';
 import { exportBackup, pickBackup } from '@/lib/backup';
+import { exportHistoryPdf } from '@/lib/exportHistory';
 
-const settingsItems = ['Exportar histórico em PDF', 'Notificações e lembretes', 'Dados do tutor', 'Privacidade e LGPD', 'Sobre o MeuPet+'];
+const settingsItems = ['Notificações e lembretes', 'Dados do tutor', 'Privacidade e LGPD', 'Sobre o MeuPet+'];
 
 export default function PerfilScreen() {
   const c = useColors();
   const { pets, replaceAll: replacePets } = usePets();
   const { events, replaceAll: replaceEvents } = useEvents();
   const { reminders, restoreReminders } = useReminders();
-  const [busy, setBusy] = useState<'export' | 'import' | null>(null);
+  const [busy, setBusy] = useState<'export' | 'import' | 'export-history' | null>(null);
 
   async function handleExport() {
     setBusy('export');
@@ -31,6 +33,34 @@ export default function PerfilScreen() {
       'Backup pronto',
       'Salve o arquivo num lugar seguro (Drive, e-mail, WhatsApp) — ele é sua cópia de segurança caso troque de celular ou reinstale o app.'
     );
+  }
+
+  async function runExportHistory(pet: Pet) {
+    setBusy('export-history');
+    const result = await exportHistoryPdf(pet, events.filter((e) => e.petId === pet.id));
+    setBusy(null);
+    if (!result.ok) {
+      if (result.reason === 'popup-blocked') {
+        Alert.alert('Pop-up bloqueado', 'Permita pop-ups para este site e tente novamente.');
+      } else {
+        Alert.alert('Não foi possível compartilhar', 'Seu aparelho não permite compartilhar arquivos agora. Tente novamente mais tarde.');
+      }
+    }
+  }
+
+  function handleExportHistory() {
+    if (pets.length === 0) {
+      Alert.alert('Nenhum pet cadastrado', 'Cadastre um pet antes de exportar o histórico.');
+      return;
+    }
+    if (pets.length === 1) {
+      runExportHistory(pets[0]);
+      return;
+    }
+    Alert.alert('Exportar histórico de qual pet?', undefined, [
+      ...pets.map((pet) => ({ text: pet.name, onPress: () => runExportHistory(pet) })),
+      { text: 'Cancelar', style: 'cancel' as const },
+    ]);
   }
 
   async function handleImport() {
@@ -128,6 +158,15 @@ export default function PerfilScreen() {
 
       <SectionLabel>Configurações</SectionLabel>
       <Card style={{ padding: 0 }}>
+        <Pressable
+          style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.border }]}
+          onPress={handleExportHistory}
+          disabled={busy !== null}>
+          <Text style={{ color: c.text, fontSize: 14.5 }}>
+            {busy === 'export-history' ? 'Gerando PDF...' : 'Exportar histórico em PDF'}
+          </Text>
+          <Text style={{ color: c.textFaint }}>›</Text>
+        </Pressable>
         {settingsItems.map((item, i) => (
           <View
             key={item}
