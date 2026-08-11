@@ -9,6 +9,7 @@ type EventsContextValue = {
   events: HealthEvent[];
   loading: boolean;
   addEvent: (event: HealthEvent) => void;
+  updateEvent: (id: string, patch: Partial<HealthEvent>) => void;
   replaceAll: (events: HealthEvent[]) => void;
 };
 
@@ -38,6 +39,9 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       loading,
       addEvent(event) {
         setEvents((prev) => [event, ...prev]);
+      },
+      updateEvent(id, patch) {
+        setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
       },
       replaceAll(nextEvents) {
         setEvents(nextEvents);

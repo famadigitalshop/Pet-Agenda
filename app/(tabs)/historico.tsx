@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Image, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { Card, CategoryTag, Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
@@ -95,6 +96,22 @@ function EventCard({ event }: { event: HealthEvent }) {
   const { pets } = usePets();
   const pet = pets.find((p) => p.id === event.petId);
   const hasMedicines = (event.medicines?.length ?? 0) > 0;
+  const isPending = event.status === 'pendente';
+
+  function handleRepeat() {
+    router.push({
+      pathname: '/(tabs)/adicionar',
+      params: {
+        repeatPetId: event.petId,
+        repeatSymptom: event.symptom ?? '',
+        repeatMedicines: JSON.stringify(event.medicines ?? []),
+      },
+    });
+  }
+
+  function handleCompletePending() {
+    router.push({ pathname: '/(tabs)/adicionar', params: { editEventId: event.id } });
+  }
 
   return (
     <Card style={{ marginBottom: 10 }}>
@@ -106,7 +123,12 @@ function EventCard({ event }: { event: HealthEvent }) {
         </View>
       </View>
 
-      {hasMedicines ? (
+      {isPending ? (
+        <View style={{ marginTop: 8 }}>
+          <Text style={{ color: c.riskMed, fontSize: 13, fontWeight: '700' }}>⏳ Pendente — falta completar os detalhes</Text>
+          <Muted style={{ fontSize: 12.5, marginTop: 2 }}>A foto já está guardada, é só preencher o remédio quando puder.</Muted>
+        </View>
+      ) : hasMedicines ? (
         <View style={{ marginTop: 8, gap: 6 }}>
           {event.medicines!.map((med, i) => (
             <View key={i} style={i > 0 ? [styles.medicineRow, { borderTopColor: c.border }] : undefined}>
@@ -126,6 +148,18 @@ function EventCard({ event }: { event: HealthEvent }) {
       <Muted style={{ marginTop: 2, fontSize: 12.5 }}>
         {pet?.name} · {event.vet}
       </Muted>
+
+      {isPending ? (
+        <Pressable onPress={handleCompletePending} style={[styles.actionBtn, { borderColor: c.accent }]}>
+          <Text style={{ color: c.accent, fontWeight: '700', fontSize: 13 }}>Completar detalhes</Text>
+        </Pressable>
+      ) : (
+        hasMedicines && (
+          <Pressable onPress={handleRepeat} style={styles.repeatBtn}>
+            <Text style={{ color: c.textMuted, fontWeight: '600', fontSize: 12.5 }}>↻ Repetir tratamento</Text>
+          </Pressable>
+        )
+      )}
     </Card>
   );
 }
@@ -173,5 +207,17 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 6,
+  },
+  repeatBtn: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+  },
+  actionBtn: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
 });

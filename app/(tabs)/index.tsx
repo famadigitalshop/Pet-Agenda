@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { Card, CategoryTag, Eyebrow, Muted, ScreenTitle, StatusChip, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
@@ -6,6 +7,7 @@ import { Text } from '@/components/Themed';
 import { daysRemaining, useReminders } from '@/contexts/RemindersContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { usePets } from '@/contexts/PetsContext';
+import { generateSosReport } from '@/lib/sos';
 
 export default function DashboardScreen() {
   const c = useColors();
@@ -14,6 +16,19 @@ export default function DashboardScreen() {
   const { pets } = usePets();
 
   const pendingReminders = pets.filter((p) => p.vaccinationStatus === 'atencao');
+  const pendingEvents = events.filter((e) => e.status === 'pendente');
+
+  async function handleSos(pet: (typeof pets)[number]) {
+    const activeReminders = reminders.filter((r) => r.petId === pet.id && daysRemaining(r) > 0);
+    const result = await generateSosReport(pet, activeReminders);
+    if (!result.ok) {
+      if (result.reason === 'popup-blocked') {
+        Alert.alert('Pop-up bloqueado', 'Permita pop-ups para este site e tente novamente.');
+      } else {
+        Alert.alert('Não foi possível compartilhar', 'Seu dispositivo não tem um app para compartilhar o PDF.');
+      }
+    }
+  }
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
@@ -30,6 +45,19 @@ export default function DashboardScreen() {
             {pendingReminders[0].name}: {pendingReminders[0].vaccinationLabel?.toLowerCase()}
           </Text>
         </Card>
+      )}
+
+      {pendingEvents.length > 0 && (
+        <Pressable onPress={() => router.push('/(tabs)/historico')}>
+          <Card style={[styles.alertCard, { borderColor: c.riskMed, backgroundColor: c.accentSoft, marginTop: pendingReminders.length > 0 ? 10 : 0 }]}>
+            <Text style={{ fontFamily: Fonts.mono, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: c.riskMed, marginBottom: 4 }}>
+              ⏳ Registro pendente
+            </Text>
+            <Text style={{ color: c.text, fontSize: 14 }}>
+              {pendingEvents.length} receita{pendingEvents.length > 1 ? 's' : ''} esperando os detalhes — toque pra completar.
+            </Text>
+          </Card>
+        </Pressable>
       )}
 
       {reminders.length > 0 && (
@@ -84,6 +112,9 @@ export default function DashboardScreen() {
                     {pet.species} · {pet.breed} · {pet.age} · {pet.weight}
                   </Muted>
                 </View>
+                <Pressable onPress={() => handleSos(pet)} style={[styles.sosBtn, { backgroundColor: c.riskHigh }]}>
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.5 }}>🆘 SOS</Text>
+                </Pressable>
               </View>
 
               <View style={{ marginTop: 12, gap: 8 }}>
@@ -151,5 +182,10 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     padding: 4,
+  },
+  sosBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
 });

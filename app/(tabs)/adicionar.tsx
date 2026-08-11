@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Eyebrow, FilterChip, Muted, ScreenTitle, useColors } from '@/components/PetCareUI';
 import { Fonts } from '@/constants/Fonts';
-import { HealthEventCategory, Medicine, healthCategories } from '@/constants/mockData';
+import { HealthEventCategory, Medicine, dosagePresets, frequencyPresets, healthCategories } from '@/constants/mockData';
 import { Text } from '@/components/Themed';
 import { useReminders } from '@/contexts/RemindersContext';
 import { useEvents } from '@/contexts/EventsContext';
@@ -41,8 +42,9 @@ async function capturePhoto(): Promise<string | null> {
 export default function AdicionarScreen() {
   const c = useColors();
   const { addReminder } = useReminders();
-  const { addEvent } = useEvents();
+  const { events, addEvent, updateEvent } = useEvents();
   const { pets } = usePets();
+  const params = useLocalSearchParams<{ editEventId?: string; repeatPetId?: string; repeatSymptom?: string; repeatMedicines?: string }>();
 
   const [petId, setPetId] = useState(pets[0]?.id ?? '');
   const [category, setCategory] = useState<string | null>('Receita');
@@ -52,9 +54,41 @@ export default function AdicionarScreen() {
   const [alarmOn, setAlarmOn] = useState(true);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
-  const pet = pets.find((p) => p.id === petId)!;
+  const pet = pets.find((p) => p.id === petId) ?? pets[0];
   const isReceita = category === 'Receita';
+
+  // completar um registro pendente (só tinha a foto)
+  useEffect(() => {
+    if (!params.editEventId) return;
+    const target = events.find((e) => e.id === params.editEventId);
+    if (!target) return;
+    setEditingEventId(target.id);
+    setPetId(target.petId);
+    setCategory(target.category);
+    setSymptom(target.symptom ?? '');
+    setPhotoUri(target.photoUri ?? null);
+    if (target.medicines?.length) {
+      setMedicines(
+        target.medicines.map((m) => ({ name: m.name, dosage: m.dosage, times: m.times, durationDays: String(m.durationDays) }))
+      );
+    }
+  }, [params.editEventId]);
+
+  // repetir um tratamento anterior (pré-preenche um registro novo)
+  useEffect(() => {
+    if (!params.repeatMedicines) return;
+    try {
+      const parsed: { name: string; dosage: string; times: string[]; durationDays: number }[] = JSON.parse(params.repeatMedicines);
+      setCategory('Receita');
+      if (params.repeatPetId) setPetId(params.repeatPetId);
+      setSymptom(params.repeatSymptom ?? '');
+      setMedicines(parsed.map((m) => ({ name: m.name, dosage: m.dosage, times: [...m.times], durationDays: String(m.durationDays) })));
+    } catch {
+      // ignora payload inválido
+    }
+  }, [params.repeatMedicines]);
 
   async function handleScanPress() {
     const uri = await capturePhoto();
@@ -77,6 +111,10 @@ export default function AdicionarScreen() {
     setMedicines((prev) =>
       prev.map((m, i) => (i === medIndex ? { ...m, times: m.times.map((t, ti) => (ti === timeIndex ? value : t)) } : m))
     );
+  }
+
+  function applyFrequencyPreset(medIndex: number, times: string[]) {
+    setMedicines((prev) => prev.map((m, i) => (i === medIndex ? { ...m, times: [...times] } : m)));
   }
 
   function addMedicineTime(medIndex: number) {
@@ -102,6 +140,33 @@ export default function AdicionarScreen() {
     setProcedureTitle('');
     setMedicines([emptyMedicine()]);
     setPhotoUri(null);
+    setEditingEventId(null);
+  }
+
+  async function handleSavePending() {
+    if (!photoUri) {
+      Alert.alert('Falta a foto', 'Tire uma foto da receita antes de salvar como pendente.');
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (editingEventId) {
+      updateEvent(editingEventId, { petId: pet.id, symptom: symptom.trim() || undefined, photoUri, status: 'pendente' });
+    } else {
+      addEvent({
+        id: `${Date.now()}`,
+        petId: pet.id,
+        date: today,
+        category: 'Receita',
+        symptom: symptom.trim() || undefined,
+        title: 'Receita pendente — completar depois',
+        vet: 'Você',
+        photoUri,
+        status: 'pendente',
+      });
+    }
+    Alert.alert('Salvo como pendente', 'A foto já está guardada. Complete os detalhes do remédio quando tiver um tempinho — o registro fica te esperando no Histórico.');
+    resetForm();
+    router.push('/(tabs)/historico');
   }
 
   async function handleSave() {
@@ -184,17 +249,28 @@ export default function AdicionarScreen() {
     }
     setSaving(false);
 
-    addEvent({
-      id: `${Date.now()}`,
-      petId: pet.id,
-      date: today,
-      category: 'Receita',
-      symptom: symptom.trim() || undefined,
-      title: parsed.map((m) => m.name).join(', '),
-      vet: 'Você',
-      medicines: parsed,
-      photoUri: photoUri ?? undefined,
-    });
+    if (editingEventId) {
+      updateEvent(editingEventId, {
+        petId: pet.id,
+        symptom: symptom.trim() || undefined,
+        title: parsed.map((m) => m.name).join(', '),
+        medicines: parsed,
+        photoUri: photoUri ?? undefined,
+        status: 'completo',
+      });
+    } else {
+      addEvent({
+        id: `${Date.now()}`,
+        petId: pet.id,
+        date: today,
+        category: 'Receita',
+        symptom: symptom.trim() || undefined,
+        title: parsed.map((m) => m.name).join(', '),
+        vet: 'Você',
+        medicines: parsed,
+        photoUri: photoUri ?? undefined,
+      });
+    }
 
     const medicineNames = parsed.map((m) => m.name).join(', ');
     Alert.alert(
@@ -209,10 +285,12 @@ export default function AdicionarScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.container}>
-      <Eyebrow>Novo registro</Eyebrow>
-      <ScreenTitle style={{ marginBottom: 4 }}>Escanear documento</ScreenTitle>
+      <Eyebrow>{editingEventId ? 'Completar registro' : 'Novo registro'}</Eyebrow>
+      <ScreenTitle style={{ marginBottom: 4 }}>{editingEventId ? 'Completar receita pendente' : 'Escanear documento'}</ScreenTitle>
       <Muted style={{ marginBottom: 18 }}>
-        Fotografe a receita ou carteirinha. Se ela tiver mais de um remédio, adicione cada um abaixo — é o que garante que a busca funcione mesmo com letra difícil.
+        {editingEventId
+          ? 'Preencha os remédios dessa receita — a foto que você já tirou continua anexada.'
+          : 'Fotografe a receita ou carteirinha. Sem tempo agora? Salve só a foto como pendente e complete os detalhes depois.'}
       </Muted>
 
       <Pressable
@@ -233,6 +311,14 @@ export default function AdicionarScreen() {
           </>
         )}
       </Pressable>
+
+      {!editingEventId && photoUri && isReceita && (
+        <Pressable onPress={handleSavePending} style={[styles.pendingBtn, { borderColor: c.border }]}>
+          <Text style={{ color: c.textMuted, fontWeight: '600', fontSize: 13 }}>
+            ⏳ Sem tempo agora? Salvar só a foto e completar depois
+          </Text>
+        </Pressable>
+      )}
 
       <View style={styles.form}>
         <Field label="Pet">
@@ -290,12 +376,34 @@ export default function AdicionarScreen() {
                   />
 
                   <Text style={styles.miniLabel}>Dosagem</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {dosagePresets.map((preset) => (
+                      <FilterChip
+                        key={preset}
+                        label={preset}
+                        active={med.dosage === preset}
+                        onPress={() => updateMedicineDosage(medIndex, preset)}
+                      />
+                    ))}
+                  </View>
                   <Input
                     value={med.dosage}
                     onChangeText={(v) => updateMedicineDosage(medIndex, v)}
                     placeholder="ex.: 1 comprimido, 5 ml, 3 gotas em cada ouvido"
                     style={{ marginBottom: 10 }}
                   />
+
+                  <Text style={styles.miniLabel}>Frequência</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {frequencyPresets.map((preset) => (
+                      <FilterChip
+                        key={preset.label}
+                        label={preset.label}
+                        active={JSON.stringify(med.times) === JSON.stringify(preset.times)}
+                        onPress={() => applyFrequencyPreset(medIndex, preset.times)}
+                      />
+                    ))}
+                  </View>
 
                   <Text style={styles.miniLabel}>Horários</Text>
                   <View style={{ gap: 8, marginBottom: 10 }}>
@@ -362,7 +470,7 @@ export default function AdicionarScreen() {
           onPress={handleSave}
           disabled={saving}>
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-            {saving ? 'Agendando alarmes...' : 'Salvar na carteira'}
+            {saving ? 'Agendando alarmes...' : editingEventId ? 'Concluir registro' : 'Salvar na carteira'}
           </Text>
         </Pressable>
       </View>
@@ -422,6 +530,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pendingBtn: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 10,
   },
   form: {
     marginTop: 24,
