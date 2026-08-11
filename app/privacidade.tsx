@@ -91,7 +91,7 @@ export default function PrivacidadeScreen() {
       </Card>
 
       <Muted style={{ fontSize: 12, textAlign: 'center', marginTop: 8 }}>
-        Dúvidas sobre privacidade? Escreva para contato@meupet.app.{'\n'}Última atualização: agosto de 2026.
+        Dúvidas sobre privacidade? Escreva para contatomeupetmais@gmail.com.{'\n'}Última atualização: agosto de 2026.
       </Muted>
     </ScrollView>
   );
